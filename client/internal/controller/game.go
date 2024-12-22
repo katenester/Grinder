@@ -1,8 +1,6 @@
 package controller
 
-import "Grinder/client/internal/models"
-
-func StartGame(ch chan struct{}, client *models.Client) {
+func StartGame(ch chan struct{}, handle Handle) {
 
 	for {
 
