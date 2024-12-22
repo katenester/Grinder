@@ -1,2 +1,11 @@
 port: "69"
 ip_server: "192.168.0.13"
+command:
+  sign: "SIGN"
+  create: "CREATE ROOM"
+  join: "JOIN ROOM"
+  start: "START GAME"
+  play: "PLAY"
+  top: "TOP-SCORES"
+  stop: "STOP"
+  exit: "EXIT"

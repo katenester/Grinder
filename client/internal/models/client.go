@@ -3,18 +3,8 @@ package models
 import (
 	"context"
 	"fmt"
+	"github.com/spf13/viper"
 	"net"
-)
-
-// Запросы для сервера
-const (
-	sign         = "SIGN %s"
-	createRoom   = "CreateRoom"
-	joinRoom     = ""
-	startGame    = "StartGame"
-	play         = "Play"
-	getTopScores = "GetTopScores"
-	stop         = "Stop"
 )
 
 type Client interface {
@@ -40,7 +30,7 @@ func NewClientKat(conn net.Conn) Client {
 }
 
 func (c *ClientKaT) Sign(username string) error {
-	request := fmt.Sprintf(sign, username)
+	request := fmt.Sprint(viper.GetString("sign"), username)
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -49,7 +39,7 @@ func (c *ClientKaT) Sign(username string) error {
 	return nil
 }
 func (c *ClientKaT) CreateRoom() error {
-	request := fmt.Sprintf(createRoom)
+	request := fmt.Sprint(viper.GetString("create"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -57,7 +47,7 @@ func (c *ClientKaT) CreateRoom() error {
 	return nil
 }
 func (c *ClientKaT) JoinRoom() error {
-	request := fmt.Sprintf(joinRoom)
+	request := fmt.Sprint(viper.GetString("join"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -65,7 +55,7 @@ func (c *ClientKaT) JoinRoom() error {
 	return nil
 }
 func (c *ClientKaT) StartGame() error {
-	request := fmt.Sprintf(startGame)
+	request := fmt.Sprint(viper.GetString("start"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -73,7 +63,7 @@ func (c *ClientKaT) StartGame() error {
 	return nil
 }
 func (c *ClientKaT) Play() error {
-	request := fmt.Sprintf(play)
+	request := fmt.Sprint(viper.GetString("game"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -81,7 +71,7 @@ func (c *ClientKaT) Play() error {
 	return nil
 }
 func (c *ClientKaT) GetTopScores() error {
-	request := fmt.Sprintf(getTopScores)
+	request := fmt.Sprint(viper.GetString("top"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err
@@ -89,7 +79,7 @@ func (c *ClientKaT) GetTopScores() error {
 	return nil
 }
 func (c *ClientKaT) Stop() error {
-	request := fmt.Sprintf(stop)
+	request := fmt.Sprint(viper.GetString("stop"))
 	_, err := c.conn.Write([]byte(request))
 	if err != nil {
 		return err

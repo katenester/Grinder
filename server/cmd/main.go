@@ -1,10 +1,10 @@
 package main
 
 import (
+	"Grinder/server/internal/transport"
 	"fmt"
 	"github.com/spf13/viper"
 	"log"
-	"net"
 )
 
 func main() {
@@ -13,21 +13,8 @@ func main() {
 		log.Fatalf("error initalization config %s", err.Error())
 		return
 	}
-	ln, err := net.Listen("tcp", ":"+viper.GetString("port"))
-	if err != nil {
-		fmt.Printf("Error starting server: %v\n", err)
-		return
-	}
-	defer ln.Close()
+	srv := transport.NewServer()
 	fmt.Println("Server listening on port 80...")
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Printf("Error accepting connection: %v\n", err)
-			continue
-		}
-		go handleClient(conn)
-	}
 
 }
 
