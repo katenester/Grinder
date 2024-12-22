@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"net"
+	"sync"
 )
 
 // CommandHandler - Тип для функции-обработчика
@@ -13,6 +14,7 @@ type CommandHandler func(conn net.Conn, args []string)
 // Server - Структура сервера
 type Server struct {
 	handlers map[string]CommandHandler
+	mu       sync.Mutex
 }
 
 // NewServer - Конструктор нового сервера
@@ -24,7 +26,9 @@ func NewServer() *Server {
 
 // RegisterHandler - Метод для регистрации обработчика команды
 func (s *Server) RegisterHandler(command string, handler CommandHandler) {
+	s.mu.Lock()
 	s.handlers[command] = handler
+	s.mu.Unlock()
 }
 
 // HandleCommand - Метод для обработки команды
@@ -35,7 +39,7 @@ func (s *Server) HandleCommand(conn net.Conn, command string, args []string) {
 		fmt.Fprintf(conn, "Команда %s не найдена\n", command)
 	}
 }
-
+a
 func (s *Server) ListenAndServe() {
 	listener, err := net.Listen("tcp", ":"+viper.GetString("port"))
 	defer listener.Close()
