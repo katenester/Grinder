@@ -1,9 +1,12 @@
 package controller
 
-import "Grinder/client/internal/models"
+import (
+	"Grinder/client/internal/models"
+	"fmt"
+)
 
 type Handle interface {
-	Sig()
+	Sign()
 	CreateRoom()
 	JoinRoom()
 	StartGame()
@@ -13,14 +16,19 @@ type Handle interface {
 	Exit()
 }
 type HandlerCondole struct {
-	client *models.Client
+	client models.Client
 }
 
-func NewHandler(client *models.Client) Handle {
+func NewHandler(client models.Client) Handle {
 	return &HandlerCondole{client: client}
 }
-func (c *HandlerCondole) Sig() {
-
+func (c *HandlerCondole) Sign() {
+	for {
+		fmt.Println("Please enter your username:")
+		var username string
+		fmt.Scanln(&username)
+		c.client.Sign(username)
+	}
 }
 func (c *HandlerCondole) CreateRoom() {
 

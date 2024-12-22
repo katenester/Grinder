@@ -1,5 +1,5 @@
 package PlayingBoard
 
-type Board struct{
-	[][]
+type Board struct {
+	[][]byte
 }
