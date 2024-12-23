@@ -18,6 +18,7 @@ func printCell(i int) {
 }
 
 func printBoard() {
+	printHelpBoard()
 	fmt.Println("Текущее поле:")
 
 	// Первая строка
@@ -134,6 +135,5 @@ func printHelpBoard() {
 func main() {
 	currentPlayer = 1
 	fmt.Println(board)
-	printHelpBoard()
 	printBoard()
 }
