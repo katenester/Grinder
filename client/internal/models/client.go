@@ -35,6 +35,7 @@ func (c *ClientKaT) Sign(username string) error {
 	if err != nil {
 		return err
 	}
+
 	c.name = username
 	return nil
 }
