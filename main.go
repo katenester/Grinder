@@ -169,15 +169,20 @@ func checkAndGetMills(board [16]int, player int) [][]int {
 
 func removeOpponentPiece(board *[16]int, player int) {
 	opponent := 3 - player
-	var position int
+	var position string
 	for {
 		fmt.Printf("Игрок %d, выберите позицию для удаления фишки противника: ", player)
 		fmt.Scan(&position)
-		if position >= 0 && position < 16 && board[position] == opponent {
-			board[position] = 0 // Удаляем фишку противника
-			break
+		positionInt, err := strconv.Atoi(position)
+		if err != nil {
+			fmt.Println("Некорректный ввод, попробуйте снова.")
+		} else {
+			if positionInt >= 0 && positionInt < 16 && board[positionInt] == opponent {
+				board[positionInt] = 0 // Удаляем фишку противника
+				break
+			}
+			fmt.Println("Некорректный ввод или позиция не занята противником, попробуйте снова.")
 		}
-		fmt.Println("Некорректный ввод или позиция не занята противником, попробуйте снова.")
 	}
 }
 
@@ -200,6 +205,21 @@ func isMillAlreadyBuilt(builtMills [][]int, mill []int) bool {
 	}
 }*/
 
+func isValidMove(board [16]int, neighbors map[int][]int, currentPlayer, from, to int) bool {
+	// Проверка, что фишка принадлежит текущему игроку и цель свободна
+	if board[from] != currentPlayer || board[to] != 0 {
+		return false
+	}
+
+	// Проверка, что 'to' - сосед 'from' в зависимости от массива neighbors
+	for _, neighbor := range neighbors[from] {
+		if neighbor == to {
+			return true // Перемещение на соседнюю позицию
+		}
+	}
+	return false
+}
+
 func main() {
 	board := [16]int{} // Изначально заполненный нулями массив
 	currentPlayer := 1
@@ -207,17 +227,29 @@ func main() {
 
 	fmt.Println(board)
 	printBoard(board)
-	var gameMode int
-	fmt.Println("Выберите режим игры:")
-	fmt.Println("1 - Игрок против игрока")
-	fmt.Println("2 - Игрок против компьютера")
-	fmt.Print("Ваш выбор: ")
-	fmt.Scan(&gameMode)
+	var gameModeInt int
+	var gameMode string
+	for {
+		fmt.Println("Выберите режим игры:")
+		fmt.Println("1 - Игрок против игрока")
+		fmt.Println("2 - Игрок против компьютера")
+		fmt.Print("Ваш выбор: ")
+		fmt.Scan(&gameMode)
+		var err error
+		gameModeInt, err = strconv.Atoi(gameMode)
+		if err != nil {
+			fmt.Println("Некорректный ввод, попробуйте снова.")
+		} else {
+			break
+		}
+	}
 
-	if gameMode == 1 {
-		for turns := 0; turns < 6; turns++ {
-			currentPlayer = 1
+	if gameModeInt == 1 {
+		// Игроки расставляют по 6 фишек на поле - 1-ый этап
+		for turns := 0; turns < 12; turns++ {
+			// Вывод поля
 			printBoard(board)
+			// Ставим фишку
 			placePieces(&board, currentPlayer)
 			// Проверка на наличие мельницы после хода
 			mills := checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
@@ -227,6 +259,7 @@ func main() {
 					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
 						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
 						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+						// Удаляем фишку противника
 						removeOpponentPiece(&board, currentPlayer)
 					} else {
 						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
@@ -235,26 +268,85 @@ func main() {
 			}
 
 			// Смена игрока и повтор
-			currentPlayer = 2
-
-			printBoard(board)
-			placePieces(&board, currentPlayer)
-			// Проверка на наличие мельницы после хода
-			mills = checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
-			if len(mills) > 0 {                            // Проверяем, есть ли найденные мельницы
-				for _, mill := range mills {
-					// Проверяем, была ли уже построена эта мельница
-					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
-						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
-						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
-						removeOpponentPiece(&board, currentPlayer)
-					} else {
-						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
-					}
-				}
-			}
+			currentPlayer = 3 - currentPlayer
 		}
 		printBoard(board)
-	}
 
+		// 2-ой этап: движение фишек
+		var neighbors = map[int][]int{
+			0:  {1, 6},       // клетка 0
+			1:  {0, 2, 4},    // клетка 1
+			2:  {1, 9},       // клетка 2
+			3:  {4, 7},       // клетка 3
+			4:  {1, 3, 5},    // клетка 4
+			5:  {4, 8},       // клетка 5
+			6:  {0, 7, 13},   // клетка 6
+			7:  {3, 6, 10},   // клетка 7
+			8:  {5, 9, 12},   // клетка 8
+			9:  {2, 8, 15},   // клетка 9
+			10: {7, 11},      // клетка 10
+			11: {10, 12, 14}, // клетка 11
+			12: {8, 11},      // клетка 12
+			13: {6, 14},      // клетка 13
+			14: {11, 13, 15}, // клетка 14
+			15: {9, 14},      // клетка 15
+		}
+
+		for {
+			printBoard(board)
+			fmt.Printf("Игрок %d, выберите перемещение\n", currentPlayer)
+
+			var from, to int
+
+			// Проверка ввода для перемещения "from"
+			for {
+				fmt.Print("С какой позиции хотите переместить фишку? ")
+				var position string
+				fmt.Scan(&position)
+				positionInt, err := strconv.Atoi(position)
+				if err != nil || positionInt < 0 || positionInt >= len(board) {
+					fmt.Println("Некорректный ввод, попробуйте снова.")
+					continue
+				}
+				from = positionInt
+				break
+			}
+
+			// Проверка ввода для перемещения "to"
+			for {
+				fmt.Print("На какую позицию хотите переместить фишку? ")
+				var position string
+				fmt.Scan(&position)
+				positionInt, err := strconv.Atoi(position)
+				if err != nil || positionInt < 0 || positionInt >= len(board) {
+					fmt.Println("Некорректный ввод, попробуйте снова.")
+					continue
+				}
+				to = positionInt
+				break
+			}
+
+			// Проверяем, допустимо ли перемещение
+			if isValidMove(board, neighbors, currentPlayer, from, to) {
+				board[to] = board[from]                         // Перемещаем фишку
+				board[from] = 0                                 // Освобождаем исходное место
+				mills := checkAndGetMills(board, currentPlayer) // Проверяем наличие мельниц
+				if len(mills) > 0 {
+					for _, mill := range mills {
+						if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+							millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
+							fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+							removeOpponentPiece(&board, currentPlayer)
+						}
+					}
+				}
+			} else {
+				fmt.Println("Неверный ход, попробуйте снова")
+				continue
+			}
+
+			// Смена игрока
+			currentPlayer = 3 - currentPlayer
+		}
+	}
 }
