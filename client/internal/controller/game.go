@@ -154,7 +154,7 @@ func Exit(ch chan struct{}) {
 
 	for {
 		// Чтение нажатой клавиши
-		_, key, err := keyboard.GetKey()
+		_, key, err := keyboard.GetKey()о
 		if err != nil {
 			fmt.Println("Ошибка при чтении клавиши:", err)
 			return
