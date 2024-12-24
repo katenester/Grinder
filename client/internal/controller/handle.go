@@ -6,14 +6,14 @@ import (
 )
 
 type Handle interface {
-	Sign()
-	CreateRoom()
-	JoinRoom()
-	StartGame()
-	Play()
-	GetTopScores()
-	Stop()
-	Exit()
+	Sign() error
+	CreateRoom() error
+	JoinRoom() error
+	StartGame() error
+	Play() error
+	GetTopScores() error
+	Stop() error
+	Exit() error
 }
 type HandlerCondole struct {
 	client models.Client
@@ -22,7 +22,7 @@ type HandlerCondole struct {
 func NewHandler(client models.Client) Handle {
 	return &HandlerCondole{client: client}
 }
-func (c *HandlerCondole) Sign() {
+func (c *HandlerCondole) Sign() error {
 	for {
 		fmt.Println("Please enter your username:")
 		var username string
@@ -30,24 +30,24 @@ func (c *HandlerCondole) Sign() {
 		c.client.Sign(username)
 	}
 }
-func (c *HandlerCondole) CreateRoom() {
+func (c *HandlerCondole) CreateRoom() error {
 
 }
-func (c *HandlerCondole) JoinRoom() {
+func (c *HandlerCondole) JoinRoom() error {
 
 }
-func (c *HandlerCondole) StartGame() {
+func (c *HandlerCondole) StartGame() error {
 
 }
-func (c *HandlerCondole) Play() {
+func (c *HandlerCondole) Play() error {
 
 }
-func (c *HandlerCondole) GetTopScores() {
+func (c *HandlerCondole) GetTopScores() error {
 
 }
-func (c *HandlerCondole) Stop() {
+func (c *HandlerCondole) Stop() error {
 
 }
-func (c *HandlerCondole) Exit() {
+func (c *HandlerCondole) Exit() error {
 
 }
