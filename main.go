@@ -205,25 +205,49 @@ func isMillAlreadyBuilt(builtMills [][]int, mill []int) bool {
 	}
 }*/
 
-func isValidMove(board [16]int, neighbors map[int][]int, currentPlayer, from, to int) bool {
+func isValidMove(board [16]int, neighbors map[int][]int, currentPlayer, from, to, count int) bool {
 	// Проверка, что фишка принадлежит текущему игроку и цель свободна
 	if board[from] != currentPlayer || board[to] != 0 {
 		return false
 	}
 
 	// Проверка, что 'to' - сосед 'from' в зависимости от массива neighbors
-	for _, neighbor := range neighbors[from] {
-		if neighbor == to {
-			return true // Перемещение на соседнюю позицию
+	if count > 3 {
+		for _, neighbor := range neighbors[from] {
+			if neighbor == to {
+				return true // Перемещение на соседнюю позицию
+			}
+		}
+		return false
+	}
+	return true
+}
+
+func isLocked(board [16]int, neighbors map[int][]int, currentPlayer int) bool {
+	for i, piece := range board {
+		if piece == currentPlayer { // Если на позиции стоит фишка текущего игрока
+			// Проверяем соседние клетки
+			canMove := false
+			for _, neighbor := range neighbors[i] {
+				if board[neighbor] == 0 { // Если соседняя клетка свободна
+					canMove = true
+					break
+				}
+			}
+			if canMove { // Если есть хотя бы один возможный ход
+				return false
+			}
 		}
 	}
-	return false
+	return true // Если ни одна фишка не может сделать ход
 }
 
 func main() {
 	board := [16]int{} // Изначально заполненный нулями массив
 	currentPlayer := 1
 	millsBuilt := make(map[int][][]int) // Хранит список построенных мельниц для каждого игрока
+	count1 := 6
+	count2 := 6
 
 	fmt.Println(board)
 	printBoard(board)
@@ -261,6 +285,11 @@ func main() {
 						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
 						// Удаляем фишку противника
 						removeOpponentPiece(&board, currentPlayer)
+						if currentPlayer == 1 {
+							count2--
+						} else {
+							count1--
+						}
 					} else {
 						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
 					}
@@ -326,8 +355,15 @@ func main() {
 				break
 			}
 
+			var localCount int
+			if currentPlayer == 1 {
+				localCount = count1
+			} else {
+				localCount = count2
+			}
+
 			// Проверяем, допустимо ли перемещение
-			if isValidMove(board, neighbors, currentPlayer, from, to) {
+			if isValidMove(board, neighbors, currentPlayer, from, to, localCount) {
 				board[to] = board[from]                         // Перемещаем фишку
 				board[from] = 0                                 // Освобождаем исходное место
 				mills := checkAndGetMills(board, currentPlayer) // Проверяем наличие мельниц
@@ -337,8 +373,21 @@ func main() {
 							millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
 							fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
 							removeOpponentPiece(&board, currentPlayer)
+							if currentPlayer == 1 {
+								count2--
+							} else {
+								count1--
+							}
 						}
 					}
+				}
+				if count1 == 2 || isLocked(board, neighbors, 1) {
+					fmt.Println("Игрок 2 победил!")
+					break
+				}
+				if count2 == 2 || isLocked(board, neighbors, 2) {
+					fmt.Println("Игрок 1 победил!")
+					break
 				}
 			} else {
 				fmt.Println("Неверный ход, попробуйте снова")
