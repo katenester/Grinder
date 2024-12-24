@@ -150,17 +150,21 @@ func placePieces(board *[16]int, player int) {
 	}
 }
 
-func checkMill(board [16]int, player int) bool {
+// Функция для проверки мельниц
+func checkAndGetMills(board [16]int, player int) [][]int {
 	mills := [][3]int{
 		{0, 1, 2}, {3, 4, 5}, {10, 11, 12}, {13, 14, 15}, // Горизонтальные линии
 		{0, 6, 13}, {3, 7, 10}, {5, 8, 12}, {2, 9, 15}, // Вертикальные линии
 	}
+
+	foundMills := [][]int{} // Срез для хранения найденных мельниц
 	for _, mill := range mills {
 		if board[mill[0]] == player && board[mill[1]] == player && board[mill[2]] == player {
-			return true
+			// Преобразуем [3]int в []int перед добавлением
+			foundMills = append(foundMills, []int{mill[0], mill[1], mill[2]}) // Добавляем найденную мельницу
 		}
 	}
-	return false
+	return foundMills // Возвращаем все найденные мельницы
 }
 
 func removeOpponentPiece(board *[16]int, player int) {
@@ -177,6 +181,16 @@ func removeOpponentPiece(board *[16]int, player int) {
 	}
 }
 
+// Функция для проверки, была ли уже построена мельница
+func isMillAlreadyBuilt(builtMills [][]int, mill []int) bool {
+	for _, builtMill := range builtMills {
+		if len(builtMill) == 3 && builtMill[0] == mill[0] && builtMill[1] == mill[1] && builtMill[2] == mill[2] {
+			return true
+		}
+	}
+	return false
+}
+
 /*func isNumber(value interface{}) bool {
 	switch value.(type) {
 	case int, int8, int16, int32, int64, float32, float64:
@@ -188,7 +202,8 @@ func removeOpponentPiece(board *[16]int, player int) {
 
 func main() {
 	board := [16]int{} // Изначально заполненный нулями массив
-	//currentPlayer := 1
+	currentPlayer := 1
+	millsBuilt := make(map[int][][]int) // Хранит список построенных мельниц для каждого игрока
 
 	fmt.Println(board)
 	printBoard(board)
@@ -201,23 +216,45 @@ func main() {
 
 	if gameMode == 1 {
 		for turns := 0; turns < 6; turns++ {
+			currentPlayer = 1
 			printBoard(board)
-			placePieces(&board, 1)
+			placePieces(&board, currentPlayer)
 			// Проверка на наличие мельницы после хода
-			if checkMill(board, 1) {
-				fmt.Printf("Игрок %d построил мельницу!\n", 1)
-				removeOpponentPiece(&board, 1)
+			mills := checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
+			if len(mills) > 0 {                             // Проверяем, есть ли найденные мельницы
+				for _, mill := range mills {
+					// Проверяем, была ли уже построена эта мельница
+					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
+						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+						removeOpponentPiece(&board, currentPlayer)
+					} else {
+						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
+					}
+				}
 			}
-			// Смена игрока
+
+			// Смена игрока и повтор
+			currentPlayer = 2
+
 			printBoard(board)
-			placePieces(&board, 2)
+			placePieces(&board, currentPlayer)
 			// Проверка на наличие мельницы после хода
-			if checkMill(board, 2) {
-				fmt.Printf("Игрок %d построил мельницу!\n", 2)
-				removeOpponentPiece(&board, 2)
+			mills = checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
+			if len(mills) > 0 {                            // Проверяем, есть ли найденные мельницы
+				for _, mill := range mills {
+					// Проверяем, была ли уже построена эта мельница
+					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
+						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+						removeOpponentPiece(&board, currentPlayer)
+					} else {
+						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
+					}
+				}
 			}
 		}
-
+		printBoard(board)
 	}
 
 }
