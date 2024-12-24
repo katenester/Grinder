@@ -8,5 +8,4 @@ command:
   TakeChips: "TAKE SHIPS"
   MoveChips: "MOVE CHIPS"
   top: "TOP-SCORES"
-  stop: "STOP"
   exit: "EXIT"

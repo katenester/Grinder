@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eiannone/keyboard"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -114,7 +113,7 @@ func (c *Client) MoveChips() {
 	fmt.Println(resp)
 	return
 }
-func (c *Client) GetTopScores(conn net.Conn, username string) {
+func (c *Client) GetTopScores() {
 	err := c.send(Proto.Request{Command: viper.GetString("top"), Username: c.name})
 	if err != nil {
 		return
@@ -127,31 +126,22 @@ func (c *Client) GetTopScores(conn net.Conn, username string) {
 	fmt.Println(resp)
 	return
 }
-func Exit(ch chan struct{}) {
-	// Открываем клавиатуру
-	if err := keyboard.Open(); err != nil {
-		fmt.Println("Ошибка при открытии клавиатуры:", err)
+func (c *Client) Exit() {
+	err := c.send(Proto.Request{Command: viper.GetString("exit"), Username: c.name})
+	if err != nil {
 		return
 	}
-	defer keyboard.Close()
-
-	for {
-		// Чтение нажатой клавиши
-		_, key, err := keyboard.GetKey()
-		if err != nil {
-			fmt.Println("Ошибка при чтении клавиши:", err)
-			return
-		}
-
-		// Если нажата клавиша F1
-		if key == keyboard.KeyF1 {
-			// Отправляем пустую структуру в канал(завершение игры)
-			ch <- struct{}{}
-			close(ch)
-			fmt.Println("F1 нажата, отправлено сообщение в канал.")
-		}
+	var resp Proto.Response
+	resp, err = c.accept()
+	if err != nil {
+		return
 	}
+	fmt.Println(resp)
+	// Очистка доски
+	c.board = make([][]byte, 0)
+	return
 }
+
 func (c *Client) send(req Proto.Request) error {
 	// Отправляем серверу json
 	encoder := json.NewEncoder(c.conn)
