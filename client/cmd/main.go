@@ -27,6 +27,7 @@ func main() {
 	client := models.NewClientKat(conn)
 	client.ChooseUsername()
 	fmt.Println("client:", client)
+	//client.GetTopScores()
 	//// Создание консольного обработчика
 	//handle := controller.NewHandler(client)
 	//ch := make(chan struct{})

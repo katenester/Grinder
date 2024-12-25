@@ -120,10 +120,7 @@ func (c *Client) GetTopScores() {
 	}
 	var resp Protocol.Response
 	resp = c.accept()
-	if err != nil {
-		return
-	}
-	fmt.Println(resp)
+	fmt.Println("Ответ от сервера:", resp)
 	return
 }
 func (c *Client) Exit() {

@@ -66,11 +66,15 @@ func (s *Server) Run() {
 		//_ = decoder.Decode(&req)
 		//log.Print("conn: ", conn, "com2:", req)
 		// Запускаем выполнение команды полученной из запроса клиента
-		req, err := s.getRequest(conn)
-		if err != nil {
-			s.handle.sendResponse(conn, err.(Protocol.Response))
-		}
-		go s.HandleCommand(conn, req, req.Command)
+		go func(conn net.Conn) {
+			for {
+				req, err := s.getRequest(conn)
+				if err != nil {
+					s.handle.sendResponse(conn, err.(Protocol.Response))
+				}
+				go s.HandleCommand(conn, req, req.Command)
+			}
+		}(conn)
 	}
 }
 
@@ -90,6 +94,7 @@ func (s *Server) getRequest(conn net.Conn) (Protocol.Request, error) {
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(conn)
 	err := decoder.Decode(&req)
+	log.Println("getRequest: ", req)
 	// Ошибка при декодировании
 	if err != nil {
 		log.Print(err.Error(), req)

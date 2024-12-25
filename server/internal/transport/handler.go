@@ -54,7 +54,6 @@ func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
 	}
 }
 func (h *Handler) Sign(conn net.Conn, req Protocol.Request) {
-	log.Print("метка")
 	// Выполянем создание/ вход пользователя и отправляем response
 	h.sendResponse(conn, h.service.Players.CreatePlayer(req.Username, conn).(Protocol.Response))
 }
@@ -74,9 +73,11 @@ func (h *Handler) MoveChips(conn net.Conn, req Protocol.Request) {
 
 }
 func (h *Handler) GetTop(conn net.Conn, req Protocol.Request) {
-
+	//h.sendResponse(conn, h.service.Players.CreatePlayer(req.Username, conn).(Protocol.Response))
+	log.Println("metka")
+	h.sendResponse(conn, h.service.Players.GetTop(conn, req).(Protocol.Response))
 }
 
 func (h *Handler) Exit(conn net.Conn, req Protocol.Request) {
-
+	h.sendResponse(conn, h.service.Players.Exit(conn, req).(Protocol.Response))
 }
