@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 )
 
@@ -196,15 +197,6 @@ func isMillAlreadyBuilt(builtMills [][]int, mill []int) bool {
 	return false
 }
 
-/*func isNumber(value interface{}) bool {
-	switch value.(type) {
-	case int, int8, int16, int32, int64, float32, float64:
-		return true
-	default:
-		return false
-	}
-}*/
-
 func isValidMove(board [16]int, neighbors map[int][]int, currentPlayer, from, to, count int) bool {
 	// Проверка, что фишка принадлежит текущему игроку и цель свободна
 	if board[from] != currentPlayer || board[to] != 0 {
@@ -242,12 +234,81 @@ func isLocked(board [16]int, neighbors map[int][]int, currentPlayer int) bool {
 	return true // Если ни одна фишка не может сделать ход
 }
 
+func computerPlacePiece(board *[16]int, currentPlayer int) {
+	//rand.Seed(time.Now().UnixNano()) // Инициализация генератора случайных чисел
+	freePositions := []int{} // Массив для хранения свободных позиций
+
+	// Находим все свободные позиции
+	for i := 0; i < len(board); i++ {
+		if board[i] == 0 { // Если клетка свободна (0)
+			freePositions = append(freePositions, i) // Добавляем номер клетки
+		}
+	}
+
+	if len(freePositions) > 0 {
+		// Выбираем случайную позицию из доступных
+		randomIndex := rand.Intn(len(freePositions))
+		selectedPosition := freePositions[randomIndex]
+
+		// Ставим фишку компьютера на выбранную позицию
+		board[selectedPosition] = currentPlayer
+		fmt.Printf("Компьютер поставил фишку на позицию %d\n", selectedPosition)
+	} else {
+		// Можно будет убрать
+		fmt.Println("Нет доступных мест для размещения фишки компьютера.")
+	}
+}
+
+func removeOpponentPieceComputer(board *[16]int, player int) {
+	opponent := 3 - player
+	opponentPositions := []int{} // Массив для хранения позиций фишек противника
+
+	// Находим все позиции фишек противника
+	for i := 0; i < len(board); i++ {
+		if board[i] == opponent {
+			opponentPositions = append(opponentPositions, i)
+		}
+	}
+
+	if len(opponentPositions) > 0 {
+		// Выбираем случайную позицию для удаления
+		randomIndex := rand.Intn(len(opponentPositions))
+		selectedPosition := opponentPositions[randomIndex]
+
+		// Удаляем фишку противника
+		board[selectedPosition] = 0
+		fmt.Printf("Компьютер удалил фишку противника с позиции %d\n", selectedPosition)
+	} else {
+		// Можно убрать
+		fmt.Println("Нет фишек противника для удаления.")
+	}
+}
+
 func main() {
 	board := [16]int{} // Изначально заполненный нулями массив
 	currentPlayer := 1
 	millsBuilt := make(map[int][][]int) // Хранит список построенных мельниц для каждого игрока
 	count1 := 6
 	count2 := 6
+
+	var neighbors = map[int][]int{
+		0:  {1, 6},       // клетка 0
+		1:  {0, 2, 4},    // клетка 1
+		2:  {1, 9},       // клетка 2
+		3:  {4, 7},       // клетка 3
+		4:  {1, 3, 5},    // клетка 4
+		5:  {4, 8},       // клетка 5
+		6:  {0, 7, 13},   // клетка 6
+		7:  {3, 6, 10},   // клетка 7
+		8:  {5, 9, 12},   // клетка 8
+		9:  {2, 8, 15},   // клетка 9
+		10: {7, 11},      // клетка 10
+		11: {10, 12, 14}, // клетка 11
+		12: {8, 11},      // клетка 12
+		13: {6, 14},      // клетка 13
+		14: {11, 13, 15}, // клетка 14
+		15: {9, 14},      // клетка 15
+	}
 
 	fmt.Println(board)
 	printBoard(board)
@@ -261,7 +322,7 @@ func main() {
 		fmt.Scan(&gameMode)
 		var err error
 		gameModeInt, err = strconv.Atoi(gameMode)
-		if err != nil {
+		if err != nil || gameModeInt < 1 || gameModeInt > 2 {
 			fmt.Println("Некорректный ввод, попробуйте снова.")
 		} else {
 			break
@@ -302,25 +363,6 @@ func main() {
 		printBoard(board)
 
 		// 2-ой этап: движение фишек
-		var neighbors = map[int][]int{
-			0:  {1, 6},       // клетка 0
-			1:  {0, 2, 4},    // клетка 1
-			2:  {1, 9},       // клетка 2
-			3:  {4, 7},       // клетка 3
-			4:  {1, 3, 5},    // клетка 4
-			5:  {4, 8},       // клетка 5
-			6:  {0, 7, 13},   // клетка 6
-			7:  {3, 6, 10},   // клетка 7
-			8:  {5, 9, 12},   // клетка 8
-			9:  {2, 8, 15},   // клетка 9
-			10: {7, 11},      // клетка 10
-			11: {10, 12, 14}, // клетка 11
-			12: {8, 11},      // клетка 12
-			13: {6, 14},      // клетка 13
-			14: {11, 13, 15}, // клетка 14
-			15: {9, 14},      // клетка 15
-		}
-
 		for {
 			printBoard(board)
 			fmt.Printf("Игрок %d, выберите перемещение\n", currentPlayer)
@@ -395,6 +437,43 @@ func main() {
 			}
 
 			// Смена игрока
+			currentPlayer = 3 - currentPlayer
+		}
+	} else { // Режим игры с компьютером
+		// 1 этап
+		for turns := 0; turns < 12; turns++ {
+			// Вывод поля
+			printBoard(board)
+			// Ставим фишку
+			if currentPlayer == 1 {
+				placePieces(&board, currentPlayer)
+			} else {
+				// Логика для компьютера
+				computerPlacePiece(&board, currentPlayer)
+			}
+
+			// Проверка на наличие мельницы после хода
+			mills := checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
+			if len(mills) > 0 {                             // Проверяем, есть ли найденные мельницы
+				for _, mill := range mills {
+					// Проверяем, была ли уже построена эта мельница
+					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
+						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+						// Удаляем фишку противника
+						if currentPlayer == 1 {
+							removeOpponentPiece(&board, currentPlayer)
+							count2--
+						} else {
+							removeOpponentPieceComputer(&board, currentPlayer)
+							count1--
+						}
+					} else {
+						fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
+					}
+				}
+			}
+			// Смена игрока и повтор
 			currentPlayer = 3 - currentPlayer
 		}
 	}
