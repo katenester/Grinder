@@ -11,7 +11,7 @@ const (
 )
 const (
 	StatusSuccess             = "OK"
-	StatusCreatedSuccess      = "CRETE"                 // Успех
+	StatusCreatedSuccess      = "CREATE"                // Успех
 	StatusBadRequest          = "BAD REQUEST"           // Некорректный формат
 	StatusNotFound            = "NOT FOUND"             // Неизвестная команда
 	StatusUnauthorized        = "UNAUTHORIZED"          // Неавторизованное действие

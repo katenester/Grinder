@@ -31,13 +31,13 @@ func (c *Client) ChooseUsername() {
 		if err != nil {
 			continue
 		}
-		_, err = c.accept()
-		if err != nil {
-			continue
+		resp := c.accept()
+		fmt.Println("Ответ от сервера:", resp)
+		if resp.Cod == 200 || resp.Cod == 201 {
+			// Всё норм, имя прошло
+			c.name = username
+			return
 		}
-		// Всё норм, имя прошло
-		c.name = username
-		return
 	}
 }
 func (c *Client) ChooseStrategy() {
@@ -53,7 +53,7 @@ func (c *Client) ChooseStrategy() {
 			if err != nil {
 				break
 			}
-			_, err = c.accept()
+			err = c.accept()
 			if err != nil {
 				break
 			}
@@ -63,7 +63,7 @@ func (c *Client) ChooseStrategy() {
 			if err != nil {
 				break
 			}
-			_, err = c.accept()
+			err = c.accept()
 			if err != nil {
 				break
 			}
@@ -80,7 +80,7 @@ func (c *Client) MakeMove() {
 		return
 	}
 	var resp Protocol.Response
-	resp, err = c.accept()
+	resp = c.accept()
 	if err != nil {
 		return
 	}
@@ -93,7 +93,7 @@ func (c *Client) TakeChips() {
 		return
 	}
 	var resp Protocol.Response
-	resp, err = c.accept()
+	resp = c.accept()
 	if err != nil {
 		return
 	}
@@ -106,7 +106,7 @@ func (c *Client) MoveChips() {
 		return
 	}
 	var resp Protocol.Response
-	resp, err = c.accept()
+	resp = c.accept()
 	if err != nil {
 		return
 	}
@@ -119,7 +119,7 @@ func (c *Client) GetTopScores() {
 		return
 	}
 	var resp Protocol.Response
-	resp, err = c.accept()
+	resp = c.accept()
 	if err != nil {
 		return
 	}
@@ -132,7 +132,7 @@ func (c *Client) Exit() {
 		return
 	}
 	var resp Protocol.Response
-	resp, err = c.accept()
+	resp = c.accept()
 	if err != nil {
 		return
 	}
@@ -152,15 +152,13 @@ func (c *Client) send(req Protocol.Request) error {
 	}
 	return err
 }
-func (c *Client) accept() (Protocol.Response, error) {
-	var resp Protocol.Response
+func (c *Client) accept() Protocol.Response {
+	resp := Protocol.Response{}
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(c.conn)
 	err := decoder.Decode(&resp)
-	// Ошибка при декодировании
-	if err != nil || resp.Cod != 200 {
-		log.Print(err.Error(), resp)
-		return Protocol.Response{}, err
+	if err != nil {
+		resp = Protocol.Response{Cod: 500, Message: Protocol.RelateError(500)}
 	}
-	return resp, nil
+	return resp
 }

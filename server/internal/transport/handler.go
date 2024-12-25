@@ -45,7 +45,7 @@ func NewHandler(service *service.Service) *Handler {
 //}
 
 func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
-	log.Print("sendResponse: ", resp)
+	log.Println("sendResponse: ", resp.Cod, resp.Message)
 	// Отправляем клиенту
 	encoder := json.NewEncoder(conn)
 	errNew := encoder.Encode(resp)
@@ -53,39 +53,30 @@ func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
 		log.Println(errNew.Error())
 	}
 }
-func (h *Handler) Sign(conn net.Conn) {
+func (h *Handler) Sign(conn net.Conn, req Protocol.Request) {
 	log.Print("метка")
-	var req Protocol.Request
-	// Чтение данных с вервера
-	decoder := json.NewDecoder(conn)
-	err := decoder.Decode(&req)
-	// Ошибка при декодировании
-	if err != nil {
-		h.sendResponse(conn, Protocol.Response{Cod: 500, Message: Protocol.RelateError(500)})
-		return
-	}
 	// Выполянем создание/ вход пользователя и отправляем response
 	h.sendResponse(conn, h.service.Players.CreatePlayer(req.Username, conn).(Protocol.Response))
 }
-func (h *Handler) GameUser(conn net.Conn) {
+func (h *Handler) GameUser(conn net.Conn, req Protocol.Request) {
 
 }
-func (h *Handler) GameServer(conn net.Conn) {
+func (h *Handler) GameServer(conn net.Conn, req Protocol.Request) {
 
 }
-func (h *Handler) MakeMove(conn net.Conn) {
+func (h *Handler) MakeMove(conn net.Conn, req Protocol.Request) {
 
 }
-func (h *Handler) TakeChips(conn net.Conn) {
+func (h *Handler) TakeChips(conn net.Conn, req Protocol.Request) {
 
 }
-func (h *Handler) MoveChips(conn net.Conn) {
+func (h *Handler) MoveChips(conn net.Conn, req Protocol.Request) {
 
 }
-func (h *Handler) GetTop(conn net.Conn) {
+func (h *Handler) GetTop(conn net.Conn, req Protocol.Request) {
 
 }
 
-func (h *Handler) Exit(conn net.Conn) {
+func (h *Handler) Exit(conn net.Conn, req Protocol.Request) {
 
 }

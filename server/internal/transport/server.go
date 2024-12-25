@@ -3,7 +3,6 @@ package transport
 import (
 	"Grinder/Protocol"
 	"encoding/json"
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -11,7 +10,7 @@ import (
 )
 
 // CommandHandler - Тип для функции-обработчика
-type CommandHandler func(conn net.Conn)
+type CommandHandler func(conn net.Conn, req Protocol.Request)
 
 // Server - Структура сервера
 type Server struct {
@@ -36,11 +35,11 @@ func (s *Server) RegisterHandler(command string, handler CommandHandler) {
 }
 
 // HandleCommand - Метод для обработки команды
-func (s *Server) HandleCommand(conn net.Conn, command string) {
+func (s *Server) HandleCommand(conn net.Conn, req Protocol.Request, command string) {
 	if handler, ok := s.handlers[command]; ok {
-		handler(conn)
+		handler(conn, req)
 	} else {
-		fmt.Fprintf(conn, "Команда %s не найдена\n", command)
+		s.handle.sendResponse(conn, Protocol.Response{Cod: Protocol.StatusNotFoundCode, Message: Protocol.RelateError(Protocol.StatusNotFoundCode)})
 	}
 }
 func (s *Server) Run() {
@@ -67,13 +66,26 @@ func (s *Server) Run() {
 		//_ = decoder.Decode(&req)
 		//log.Print("conn: ", conn, "com2:", req)
 		// Запускаем выполнение команды полученной из запроса клиента
-
-		go s.HandleCommand(conn, s.getCommand(conn))
+		req, err := s.getRequest(conn)
+		if err != nil {
+			s.handle.sendResponse(conn, err.(Protocol.Response))
+		}
+		go s.HandleCommand(conn, req, req.Command)
 	}
 }
 
-// Получить команду из запроса
-func (s *Server) getCommand(conn net.Conn) string {
+//func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
+//	log.Print("sendResponse: ", resp)
+//	// Отправляем клиенту
+//	encoder := json.NewEncoder(conn)
+//	errNew := encoder.Encode(resp)
+//	if errNew != nil {
+//		log.Println(errNew.Error())
+//	}
+//}
+
+// Получить запрос
+func (s *Server) getRequest(conn net.Conn) (Protocol.Request, error) {
 	var req Protocol.Request
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(conn)
@@ -81,9 +93,9 @@ func (s *Server) getCommand(conn net.Conn) string {
 	// Ошибка при декодировании
 	if err != nil {
 		log.Print(err.Error(), req)
-		return ""
+		return Protocol.Request{}, Protocol.Response{Cod: Protocol.StatusBadRequestCode, Message: Protocol.RelateError(Protocol.StatusBadRequestCode)}
 	}
-	return req.Command
+	return req, nil
 }
 
 func (s *Server) InitRouter() {
