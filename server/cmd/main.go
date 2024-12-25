@@ -1,8 +1,9 @@
 package main
 
 import (
+	"Grinder/server/internal/repository"
+	"Grinder/server/internal/service"
 	"Grinder/server/internal/transport"
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
 )
@@ -13,9 +14,13 @@ func main() {
 		log.Fatalf("error initalization config %s", err.Error())
 		return
 	}
-	srv := transport.NewServer()
-	fmt.Println("Server listening on port 80...")
-
+	// Dependency injection for architecture application
+	repos := repository.NewRepository()
+	services := service.NewService(repos)
+	handlers := transport.NewHandler(services)
+	srv := transport.NewServer(handlers)
+	// Запускаем сервер
+	srv.Run()
 }
 
 func initConfig() error {

@@ -25,3 +25,20 @@ type MyError struct {
 func (m *MyError) Error() string {
 	return m.message
 }
+
+func RelateError(code int) string {
+	switch code {
+	case StatusSuccessCode:
+		return StatusSuccess
+	case StatusBadRequestCode:
+		return StatusBadRequest
+	case StatusNotFoundCode:
+		return StatusNotFound
+	case StatusUnauthorizedCode:
+		return StatusUnauthorized
+	case StatusConflictCode:
+		return StatusConflict
+	case StatusInternalServerErrorCode:
+		return StatusInternalServerError
+	}
+}

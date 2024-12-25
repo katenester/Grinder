@@ -1,11 +1,17 @@
 package repository
 
+import "net"
+
 type Players interface {
-	CreatePlayer(username string) error
-	GetPlayer(username string) error
+	CreatePlayer(username string, conn net.Conn) error
 }
 
-type Rooms interface {
-	CreateRoom(username string) error
-	JoinRoom(username string) error
+type Repository struct {
+	Players
+}
+
+func NewRepository() *Repository {
+	return &Repository{
+		Players: NewPlayersMemory(),
+	}
 }

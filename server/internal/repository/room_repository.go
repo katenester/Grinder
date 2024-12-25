@@ -11,9 +11,9 @@ type RoomsMemory struct {
 	mutex sync.Mutex
 }
 
-func NewRooms() Rooms {
-	return &RoomsMemory{}
-}
+//func NewRooms() Rooms {
+//	return &RoomsMemory{}
+//}
 
 func (rooms *RoomsMemory) CreateRoom(username string) error {
 	return errors.New("Not implemented")

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"Grinder/Proto"
+	"Grinder/Protocol"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,7 +27,7 @@ func (c *Client) ChooseUsername() {
 	for {
 		fmt.Println("Please enter your username:")
 		fmt.Scanln(&username)
-		err := c.send(Proto.Request{Command: viper.GetString("sign"), Username: username})
+		err := c.send(Protocol.Request{Command: viper.GetString("sign"), Username: username})
 		if err != nil {
 			continue
 		}
@@ -49,7 +49,7 @@ func (c *Client) ChooseStrategy() {
 		fmt.Scanln(&choose)
 		switch choose {
 		case 1:
-			err = c.send(Proto.Request{Command: viper.GetString("game_user"), Username: c.name})
+			err = c.send(Protocol.Request{Command: viper.GetString("game_user"), Username: c.name})
 			if err != nil {
 				break
 			}
@@ -59,7 +59,7 @@ func (c *Client) ChooseStrategy() {
 			}
 			return
 		case 2:
-			err = c.send(Proto.Request{Command: viper.GetString("game_server"), Username: c.name})
+			err = c.send(Protocol.Request{Command: viper.GetString("game_server"), Username: c.name})
 			if err != nil {
 				break
 			}
@@ -75,11 +75,11 @@ func (c *Client) ChooseStrategy() {
 }
 
 func (c *Client) MakeMove() {
-	err := c.send(Proto.Request{Command: viper.GetString("MakeMove"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("MakeMove"), Username: c.name})
 	if err != nil {
 		return
 	}
-	var resp Proto.Response
+	var resp Protocol.Response
 	resp, err = c.accept()
 	if err != nil {
 		return
@@ -88,11 +88,11 @@ func (c *Client) MakeMove() {
 	return
 }
 func (c *Client) TakeChips() {
-	err := c.send(Proto.Request{Command: viper.GetString("TakeChips"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("TakeChips"), Username: c.name})
 	if err != nil {
 		return
 	}
-	var resp Proto.Response
+	var resp Protocol.Response
 	resp, err = c.accept()
 	if err != nil {
 		return
@@ -101,11 +101,11 @@ func (c *Client) TakeChips() {
 	return
 }
 func (c *Client) MoveChips() {
-	err := c.send(Proto.Request{Command: viper.GetString("MoveChips"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("MoveChips"), Username: c.name})
 	if err != nil {
 		return
 	}
-	var resp Proto.Response
+	var resp Protocol.Response
 	resp, err = c.accept()
 	if err != nil {
 		return
@@ -114,11 +114,11 @@ func (c *Client) MoveChips() {
 	return
 }
 func (c *Client) GetTopScores() {
-	err := c.send(Proto.Request{Command: viper.GetString("top"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("top"), Username: c.name})
 	if err != nil {
 		return
 	}
-	var resp Proto.Response
+	var resp Protocol.Response
 	resp, err = c.accept()
 	if err != nil {
 		return
@@ -127,11 +127,11 @@ func (c *Client) GetTopScores() {
 	return
 }
 func (c *Client) Exit() {
-	err := c.send(Proto.Request{Command: viper.GetString("exit"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("exit"), Username: c.name})
 	if err != nil {
 		return
 	}
-	var resp Proto.Response
+	var resp Protocol.Response
 	resp, err = c.accept()
 	if err != nil {
 		return
@@ -142,7 +142,7 @@ func (c *Client) Exit() {
 	return
 }
 
-func (c *Client) send(req Proto.Request) error {
+func (c *Client) send(req Protocol.Request) error {
 	// Отправляем серверу json
 	encoder := json.NewEncoder(c.conn)
 	err := encoder.Encode(req)
@@ -151,15 +151,15 @@ func (c *Client) send(req Proto.Request) error {
 	}
 	return err
 }
-func (c *Client) accept() (Proto.Response, error) {
-	var resp Proto.Response
+func (c *Client) accept() (Protocol.Response, error) {
+	var resp Protocol.Response
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(c.conn)
 	err := decoder.Decode(&resp)
 	// Ошибка при декодировании
 	if err != nil || resp.Cod != 200 {
 		log.Print(err.Error(), resp)
-		return Proto.Response{}, err
+		return Protocol.Response{}, err
 	}
 	return resp, nil
 }

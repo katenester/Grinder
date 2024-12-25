@@ -1,4 +1,4 @@
-package Proto
+package Protocol
 
 type Request struct {
 	Command  string `json:"command" binding:"required"`
