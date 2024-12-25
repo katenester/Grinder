@@ -283,6 +283,46 @@ func removeOpponentPieceComputer(board *[16]int, player int) {
 		fmt.Println("Нет фишек противника для удаления.")
 	}
 }
+func computerMove(board *[16]int, neighbors map[int][]int, currentPlayer int, count int) (int, int) {
+	availableMoves := []string{}
+
+	// Находим все доступные перемещения для компьютера
+	for from := 0; from < len(board); from++ {
+		if board[from] == currentPlayer { // Если на позиции стоит фишка компьютера
+			if count > 3 {
+				// Можно перемещаться только на соседние свободные клетки
+				for _, to := range neighbors[from] {
+					if isValidMove(*board, neighbors, currentPlayer, from, to, count) {
+						availableMoves = append(availableMoves, fmt.Sprintf("%d->%d", from, to))
+					}
+				}
+			} else {
+				// Можно перемещаться на любую свободную клетку
+				for to := 0; to < len(board); to++ {
+					if isValidMove(*board, neighbors, currentPlayer, from, to, count) {
+						availableMoves = append(availableMoves, fmt.Sprintf("%d->%d", from, to))
+					}
+				}
+			}
+		}
+	}
+
+	if len(availableMoves) > 0 {
+		// Выбираем случайное перемещение
+		move := availableMoves[rand.Intn(len(availableMoves))]
+		from, to := parseMove(move)
+		return from, to // Возвращаем from и to, если ход возможен
+	}
+
+	return -1, -1 // Возвращаем -1 для from и to, если нет доступных ходов
+}
+
+// Функция для парсинга перемещения из строки
+func parseMove(move string) (int, int) {
+	var from, to int
+	fmt.Sscanf(move, "%d->%d", &from, &to)
+	return from, to
+}
 
 func main() {
 	board := [16]int{} // Изначально заполненный нулями массив
@@ -474,6 +514,102 @@ func main() {
 				}
 			}
 			// Смена игрока и повтор
+			currentPlayer = 3 - currentPlayer
+		}
+
+		// Второй этап
+		for {
+			printBoard(board)
+			if currentPlayer == 1 {
+				// Ход игрока
+				fmt.Printf("Игрок %d, выберите перемещение\n", currentPlayer)
+
+				var from, to int
+
+				// Проверка ввода для перемещения "from"
+				for {
+					fmt.Print("С какой позиции хотите переместить фишку? ")
+					var position string
+					fmt.Scan(&position)
+					positionInt, err := strconv.Atoi(position)
+					if err != nil || positionInt < 0 || positionInt >= len(board) {
+						fmt.Println("Некорректный ввод, попробуйте снова.")
+						continue
+					}
+					from = positionInt
+					break
+				}
+
+				// Проверка ввода для перемещения "to"
+				for {
+					fmt.Print("На какую позицию хотите переместить фишку? ")
+					var position string
+					fmt.Scan(&position)
+					positionInt, err := strconv.Atoi(position)
+					if err != nil || positionInt < 0 || positionInt >= len(board) {
+						fmt.Println("Некорректный ввод, попробуйте снова.")
+						continue
+					}
+					to = positionInt
+					break
+				}
+
+				// Проверяем допустимость перемещения
+				if isValidMove(board, neighbors, currentPlayer, from, to, count1) {
+					board[to] = board[from] // Перемещаем фишку
+					board[from] = 0         // Освобождаем исходное место
+					mills := checkAndGetMills(board, currentPlayer)
+					if len(mills) > 0 {
+						for _, mill := range mills {
+							if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+								millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
+								fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+								removeOpponentPiece(&board, currentPlayer)
+								count2--
+							}
+						}
+					}
+					if count1 == 2 || isLocked(board, neighbors, 1) {
+						fmt.Println("Игрок 2 победил!")
+						break
+					}
+					if count2 == 2 || isLocked(board, neighbors, 2) {
+						fmt.Println("Игрок 1 победил!")
+						break
+					}
+				} else {
+					fmt.Println("Неверный ход, попробуйте снова")
+				}
+			} else {
+				// Ход компьютера
+				fmt.Printf("Игрок %d (Компьютер) делает ход...\n", currentPlayer)
+
+				// Логика выбора хода компьютера
+				from, to := computerMove(&board, neighbors, currentPlayer, count2)
+				board[to] = board[from]
+				board[from] = 0
+				fmt.Printf("Компьютер переместил фишку с %d на %d\n", from, to)
+				mills := checkAndGetMills(board, currentPlayer)
+				if len(mills) > 0 {
+					for _, mill := range mills {
+						if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
+							millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
+							fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+							removeOpponentPieceComputer(&board, currentPlayer)
+							count1--
+						}
+					}
+				}
+				if count1 == 2 || isLocked(board, neighbors, 1) {
+					fmt.Println("Игрок 2 победил!")
+					break
+				}
+				if count2 == 2 || isLocked(board, neighbors, 2) {
+					fmt.Println("Игрок 1 победил!")
+					break
+				}
+			}
+			// Смена игрока
 			currentPlayer = 3 - currentPlayer
 		}
 	}
