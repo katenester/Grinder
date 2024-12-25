@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Grinder/client/internal/controller"
 	"Grinder/client/internal/models"
+	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -22,14 +22,17 @@ func main() {
 	}
 	// Закрытие соединения
 	defer conn.Close()
+
 	// Создание клиента который работает с протоколом Kat
 	client := models.NewClientKat(conn)
-	// Создание консольного обработчика
-	handle := controller.NewHandler(client)
-	ch := make(chan struct{})
-	// Запуск блока контраля игры
-	go controller.StartGame(ch, handle)
-	<-ch
+	client.ChooseUsername()
+	fmt.Println("client:", client)
+	//// Создание консольного обработчика
+	//handle := controller.NewHandler(client)
+	//ch := make(chan struct{})
+	//// Запуск блока контраля игры
+	//go controller.StartGame(ch, handle)
+	//<-ch
 }
 
 func initConfig() error {

@@ -27,7 +27,7 @@ func (c *Client) ChooseUsername() {
 	for {
 		fmt.Println("Please enter your username:")
 		fmt.Scanln(&username)
-		err := c.send(Protocol.Request{Command: viper.GetString("sign"), Username: username})
+		err := c.send(Protocol.Request{Command: viper.GetString("command.sign"), Username: username})
 		if err != nil {
 			continue
 		}
@@ -49,7 +49,7 @@ func (c *Client) ChooseStrategy() {
 		fmt.Scanln(&choose)
 		switch choose {
 		case 1:
-			err = c.send(Protocol.Request{Command: viper.GetString("game_user"), Username: c.name})
+			err = c.send(Protocol.Request{Command: viper.GetString("command.game_user"), Username: c.name})
 			if err != nil {
 				break
 			}
@@ -59,7 +59,7 @@ func (c *Client) ChooseStrategy() {
 			}
 			return
 		case 2:
-			err = c.send(Protocol.Request{Command: viper.GetString("game_server"), Username: c.name})
+			err = c.send(Protocol.Request{Command: viper.GetString("command.game_server"), Username: c.name})
 			if err != nil {
 				break
 			}
@@ -75,7 +75,7 @@ func (c *Client) ChooseStrategy() {
 }
 
 func (c *Client) MakeMove() {
-	err := c.send(Protocol.Request{Command: viper.GetString("MakeMove"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("command.MakeMove"), Username: c.name})
 	if err != nil {
 		return
 	}
@@ -88,7 +88,7 @@ func (c *Client) MakeMove() {
 	return
 }
 func (c *Client) TakeChips() {
-	err := c.send(Protocol.Request{Command: viper.GetString("TakeChips"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("command.TakeChips"), Username: c.name})
 	if err != nil {
 		return
 	}
@@ -101,7 +101,7 @@ func (c *Client) TakeChips() {
 	return
 }
 func (c *Client) MoveChips() {
-	err := c.send(Protocol.Request{Command: viper.GetString("MoveChips"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("command.MoveChips"), Username: c.name})
 	if err != nil {
 		return
 	}
@@ -114,7 +114,7 @@ func (c *Client) MoveChips() {
 	return
 }
 func (c *Client) GetTopScores() {
-	err := c.send(Protocol.Request{Command: viper.GetString("top"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("command.top"), Username: c.name})
 	if err != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func (c *Client) GetTopScores() {
 	return
 }
 func (c *Client) Exit() {
-	err := c.send(Protocol.Request{Command: viper.GetString("exit"), Username: c.name})
+	err := c.send(Protocol.Request{Command: viper.GetString("command.exit"), Username: c.name})
 	if err != nil {
 		return
 	}
@@ -146,6 +146,7 @@ func (c *Client) send(req Protocol.Request) error {
 	// Отправляем серверу json
 	encoder := json.NewEncoder(c.conn)
 	err := encoder.Encode(req)
+	fmt.Println("req", req)
 	if err != nil {
 		log.Print(err.Error())
 	}

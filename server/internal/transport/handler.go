@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"Grinder/Errors"
 	"Grinder/Protocol"
 	"Grinder/server/internal/service"
 	"encoding/json"
@@ -55,13 +54,14 @@ func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
 	}
 }
 func (h *Handler) Sign(conn net.Conn) {
+	log.Print("метка")
 	var req Protocol.Request
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(conn)
 	err := decoder.Decode(&req)
 	// Ошибка при декодировании
 	if err != nil {
-		h.sendResponse(conn, Protocol.Response{Cod: 500, Message: Errors.RelateError(500)})
+		h.sendResponse(conn, Protocol.Response{Cod: 500, Message: Protocol.RelateError(500)})
 		return
 	}
 	// Выполянем создание/ вход пользователя и отправляем response

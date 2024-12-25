@@ -56,11 +56,18 @@ func (s *Server) Run() {
 	for {
 		// Слушаем соединения
 		conn, err := listener.Accept()
+		//log.Print("conn: ", conn, "com:", s.getCommand(conn))
 		if err != nil {
 			log.Printf("Error accepting connection: %v\n", err)
 			continue
 		}
+		//var req Protocol.Request
+		//// Чтение данных с вервера
+		//decoder := json.NewDecoder(conn)
+		//_ = decoder.Decode(&req)
+		//log.Print("conn: ", conn, "com2:", req)
 		// Запускаем выполнение команды полученной из запроса клиента
+
 		go s.HandleCommand(conn, s.getCommand(conn))
 	}
 }
@@ -80,14 +87,14 @@ func (s *Server) getCommand(conn net.Conn) string {
 }
 
 func (s *Server) InitRouter() {
-	s.RegisterHandler(viper.GetString("sign"), s.handle.Sign)
-	s.RegisterHandler(viper.GetString("game_user"), s.handle.GameUser)
-	s.RegisterHandler(viper.GetString("game_server"), s.handle.GameServer)
-	s.RegisterHandler(viper.GetString("MakeMove"), s.handle.MakeMove)
-	s.RegisterHandler(viper.GetString("TakeChips"), s.handle.TakeChips)
-	s.RegisterHandler(viper.GetString("MoveChips"), s.handle.MoveChips)
-	s.RegisterHandler(viper.GetString("top"), s.handle.GetTop)
-	s.RegisterHandler(viper.GetString("exit"), s.handle.Exit)
+	s.RegisterHandler(viper.GetString("command.sign"), s.handle.Sign)
+	s.RegisterHandler(viper.GetString("command.game_user"), s.handle.GameUser)
+	s.RegisterHandler(viper.GetString("command.game_server"), s.handle.GameServer)
+	s.RegisterHandler(viper.GetString("command.MakeMove"), s.handle.MakeMove)
+	s.RegisterHandler(viper.GetString("command.TakeChips"), s.handle.TakeChips)
+	s.RegisterHandler(viper.GetString("command.MoveChips"), s.handle.MoveChips)
+	s.RegisterHandler(viper.GetString("command.top"), s.handle.GetTop)
+	s.RegisterHandler(viper.GetString("command.exit"), s.handle.Exit)
 }
 
 //func (s *Server) send(req Protocol.Request) error {
