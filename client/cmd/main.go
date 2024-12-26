@@ -2,7 +2,6 @@ package main
 
 import (
 	"Grinder/client/internal/models"
-	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -21,13 +20,13 @@ func main() {
 		return
 	}
 	// Закрытие соединения
-	defer conn.Close()
+	//defer conn.Close()
 
 	// Создание клиента который работает с протоколом Kat
 	client := models.NewClientKat(conn)
 	client.ChooseUsername()
-	fmt.Println("client:", client)
-	//client.GetTopScores()
+	//fmt.Println("client:", client)
+	client.GetTopScores()
 	//// Создание консольного обработчика
 	//handle := controller.NewHandler(client)
 	//ch := make(chan struct{})

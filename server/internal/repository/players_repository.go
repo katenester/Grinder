@@ -5,6 +5,7 @@ import (
 	"Grinder/server/internal/models"
 	"encoding/json"
 	"errors"
+	"log"
 	"net"
 	"sort"
 	"sync"
@@ -54,6 +55,8 @@ func (p *PlayersMemory) GetTop(conn net.Conn, req Protocol.Request) error {
 	})
 	// Преобразуем слайс игроков в JSON
 	data, err := json.Marshal(sortedPlayers)
+	log.Println(sortedPlayers)
+	log.Println(data)
 	if err != nil {
 		return Protocol.Response{Cod: Protocol.StatusInternalServerErrorCode, Message: Protocol.RelateError(Protocol.StatusInternalServerErrorCode)}
 	}

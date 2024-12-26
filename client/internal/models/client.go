@@ -113,6 +113,13 @@ func (c *Client) MoveChips() {
 	fmt.Println(resp)
 	return
 }
+
+type Player struct {
+	Name        string `json:"name"`         // Игровое имя
+	Score       int    `json:"score"`        // Подключение
+	IsConnected bool   `json:"is-connected"` // Проверка подключения
+}
+
 func (c *Client) GetTopScores() {
 	err := c.send(Protocol.Request{Command: viper.GetString("command.top"), Username: c.name})
 	if err != nil {
@@ -120,7 +127,10 @@ func (c *Client) GetTopScores() {
 	}
 	var resp Protocol.Response
 	resp = c.accept()
-	fmt.Println("Ответ от сервера:", resp)
+	// Зависимости
+	var players []Player
+	data := json.Unmarshal(resp.Body, &players)
+	fmt.Println("Ответ от сервера:", resp.Cod, resp.Message, data)
 	return
 }
 func (c *Client) Exit() {
@@ -152,10 +162,17 @@ func (c *Client) send(req Protocol.Request) error {
 func (c *Client) accept() Protocol.Response {
 	resp := Protocol.Response{}
 	// Чтение данных с вервера
-	decoder := json.NewDecoder(c.conn)
-	err := decoder.Decode(&resp)
-	if err != nil {
-		resp = Protocol.Response{Cod: 500, Message: Protocol.RelateError(500)}
-	}
+	buffer := make([]byte, 1024)
+	n, _ := c.conn.Read(buffer)
+	log.Println(string(buffer[:n]))
+	json.Unmarshal(buffer[:n], &resp)
+	n, _ = c.conn.Read(buffer)
+	log.Println(string(buffer[:n]))
+	//decoder := json.NewDecoder(c.conn)
+	//err := decoder.Decode(&resp)
+	//log.Println(resp)
+	//if err != nil {
+	//	resp = Protocol.Response{Cod: 500, Message: Protocol.RelateError(500)}
+	//}
 	return resp
 }

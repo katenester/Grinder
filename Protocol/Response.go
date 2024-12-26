@@ -8,6 +8,8 @@ const (
 	StatusUnauthorizedCode        = 403 // Неавторизованное действие
 	StatusConflictCode            = 409 // Пользователь уже существует
 	StatusInternalServerErrorCode = 500 // Ошибка на сервере
+	StatusConnectionErrorCode     = 600 // TimeOut or Close connection
+	StatusTimeOutCode             = 605 // TimeOut or Close connection
 )
 const (
 	StatusSuccess             = "OK"
@@ -17,12 +19,14 @@ const (
 	StatusUnauthorized        = "UNAUTHORIZED"          // Неавторизованное действие
 	StatusConflict            = "CONFLICT"              // Пользователь уже существует
 	StatusInternalServerError = "INTERNAL SERVER ERROR" // Ошибка на сервере
+	StatusConnectionError     = "CONNECTION ERROR"
+	StatusTimeOut             = "TIMEOUT"
 )
 
 type Response struct {
 	Cod     int    `json:"cod" binding:"required"`
 	Message string `json:"message" binding:"required"`
-	Body    []byte `json:"body"` // доска пока так но возможно будет массив
+	Body    []byte `json:"-"` // доска пока так но возможно будет массив
 }
 
 func (res Response) Error() string {
@@ -42,7 +46,11 @@ func RelateError(code int) string {
 		return StatusUnauthorized
 	case StatusConflictCode:
 		return StatusConflict
-	default:
+	case StatusInternalServerErrorCode:
 		return StatusInternalServerError
+	case StatusConnectionErrorCode:
+		return StatusConnectionError
+	default:
+		return StatusTimeOut
 	}
 }

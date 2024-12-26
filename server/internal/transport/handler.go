@@ -47,10 +47,24 @@ func NewHandler(service *service.Service) *Handler {
 func (h *Handler) sendResponse(conn net.Conn, resp Protocol.Response) {
 	log.Println("sendResponse: ", resp.Cod, resp.Message)
 	// Отправляем клиенту
-	encoder := json.NewEncoder(conn)
-	errNew := encoder.Encode(resp)
-	if errNew != nil {
-		log.Println(errNew.Error())
+	//encoder := json.NewEncoder(conn)
+	//errNew := encoder.Encode(resp)
+	//if errNew != nil {
+	//	log.Println(errNew.Error())
+	//}
+	dat, err := json.Marshal(resp)
+	if err != nil {
+		log.Println(err)
+	}
+	_, err = conn.Write(dat)
+	if err != nil {
+		log.Println(err)
+	}
+	if resp.Body != nil {
+		data := resp.Body
+		log.Println(data)
+		// Записываем тело
+		_, err = conn.Write(data)
 	}
 }
 func (h *Handler) Sign(conn net.Conn, req Protocol.Request) {

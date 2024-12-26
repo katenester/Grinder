@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 // CommandHandler - Тип для функции-обработчика
@@ -66,13 +67,29 @@ func (s *Server) Run() {
 		//_ = decoder.Decode(&req)
 		//log.Print("conn: ", conn, "com2:", req)
 		// Запускаем выполнение команды полученной из запроса клиента
+		//ch:=make(chan struct{})
 		go func(conn net.Conn) {
+			defer conn.Close()
 			for {
 				req, err := s.getRequest(conn)
 				if err != nil {
-					s.handle.sendResponse(conn, err.(Protocol.Response))
+					// Если оборвалось подключение (добавить удаление пользователя из активных ссесий)
+					if err.Error() == "EOF" || err.Error() == "use of closed network connection" {
+						//	// Отправляем уведомление в канал, что соединение закрыто
+						log.Println("Connection closed by client")
+						return
+					}
+					// Если TimeOut
+					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+						s.handle.sendResponse(conn, Protocol.Response{Cod: Protocol.StatusTimeOutCode, Message: Protocol.RelateError(Protocol.StatusTimeOutCode)})
+						continue
+					} else {
+						// Если ошибка при декодировании
+						s.handle.sendResponse(conn, Protocol.Response{Cod: Protocol.StatusBadRequestCode, Message: Protocol.RelateError(Protocol.StatusBadRequestCode)})
+						continue
+					}
 				}
-				go s.HandleCommand(conn, req, req.Command)
+				s.HandleCommand(conn, req, req.Command)
 			}
 		}(conn)
 	}
@@ -90,6 +107,8 @@ func (s *Server) Run() {
 
 // Получить запрос
 func (s *Server) getRequest(conn net.Conn) (Protocol.Request, error) {
+	// Устанавливаем тайм-аут на чтение данных (например, 10 секунд)
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	var req Protocol.Request
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(conn)
@@ -97,8 +116,9 @@ func (s *Server) getRequest(conn net.Conn) (Protocol.Request, error) {
 	log.Println("getRequest: ", req)
 	// Ошибка при декодировании
 	if err != nil {
-		log.Print(err.Error(), req)
-		return Protocol.Request{}, Protocol.Response{Cod: Protocol.StatusBadRequestCode, Message: Protocol.RelateError(Protocol.StatusBadRequestCode)}
+		//	s.closeCh <- conn // передаем соединение в канал
+		log.Print("log ", err.Error(), req)
+		return Protocol.Request{}, err
 	}
 	return req, nil
 }
