@@ -66,3 +66,18 @@ func (p *PlayersMemory) Exit(conn net.Conn, req Protocol.Request) error {
 	// Нужно очистить поле для игроков, закрыть игру(не conn)
 	return errors.New("Not Implemented")
 }
+
+func (p *PlayersMemory) GetUser(username string) (models.Player, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, player := range p.players {
+		if player.Name == username {
+			if player.IsConnected {
+				return player, nil
+			}
+			// Если пользователь отключен
+			return models.Player{}, Protocol.Response{Cod: Protocol.StatusConflictCode, Message: Protocol.RelateError(Protocol.StatusConflictCode)}
+		}
+	}
+	return models.Player{}, Protocol.Response{Cod: Protocol.StatusNotFoundCode, Message: Protocol.RelateError(Protocol.StatusNotFoundCode)}
+}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"Grinder/Protocol"
+	"Grinder/server/internal/models"
 	"Grinder/server/internal/repository"
 	"net"
 )
@@ -26,4 +27,8 @@ func (p *PlayersService) GetTop(conn net.Conn, req Protocol.Request) error {
 
 func (p *PlayersService) Exit(conn net.Conn, req Protocol.Request) error {
 	return p.repo.Exit(conn, req)
+}
+
+func (p *PlayersService) GetUser(username string) (models.Player, error) {
+	return p.repo.GetUser(username)
 }

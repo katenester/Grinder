@@ -2,6 +2,7 @@ package main
 
 import (
 	"Grinder/client/internal/models"
+	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -13,15 +14,17 @@ func main() {
 		log.Fatalf("error initalization config %s", err.Error())
 		return
 	}
+	fmt.Println("hell")
 	// Подключение к серверу через сокет tcpr
 	conn, err := net.Dial("tcp", viper.GetString("ip_server")+":"+viper.GetString("port"))
+	fmt.Println("hellu")
 	if err != nil {
 		log.Fatalf("error initalization config %s", err.Error())
 		return
 	}
-	// Закрытие соединения
+	// Закрытие соединенияр
 	//defer conn.Close()
-
+	fmt.Println(conn)
 	// Создание клиента который работает с протоколом Kat
 	client := models.NewClientKat(conn)
 	client.ChooseUsername()

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"Grinder/Protocol"
+	"Grinder/server/internal/models"
 	"net"
 )
 
@@ -9,14 +10,19 @@ type Players interface {
 	CreatePlayer(username string, conn net.Conn) error
 	GetTop(conn net.Conn, req Protocol.Request) error
 	Exit(conn net.Conn, req Protocol.Request) error
+	GetUser(username string) (models.Player, error)
 }
-
+type Game interface {
+	CreateRoom(players []models.Player) error
+}
 type Repository struct {
 	Players
+	Game
 }
 
 func NewRepository() *Repository {
 	return &Repository{
 		Players: NewPlayersMemory(),
+		Game:    NewRoomsMemory(),
 	}
 }

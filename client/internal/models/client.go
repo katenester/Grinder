@@ -168,6 +168,7 @@ func (c *Client) accept() Protocol.Response {
 	json.Unmarshal(buffer[:n], &resp)
 	n, _ = c.conn.Read(buffer)
 	log.Println(string(buffer[:n]))
+
 	//decoder := json.NewDecoder(c.conn)
 	//err := decoder.Decode(&resp)
 	//log.Println(resp)

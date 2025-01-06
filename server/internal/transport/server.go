@@ -3,6 +3,7 @@ package transport
 import (
 	"Grinder/Protocol"
 	"encoding/json"
+	"fmt"
 	"github.com/spf13/viper"
 	"log"
 	"net"
@@ -50,12 +51,14 @@ func (s *Server) Run() {
 		log.Printf("Error starting server: %v\n", err)
 		return
 	}
-	log.Println("Server listening on port 80...")
+	log.Println("Server listening on port 69...")
 	// Регистрируем пути
 	s.InitRouter()
 	for {
+		fmt.Println("Waiting for connection...")
 		// Слушаем соединения
 		conn, err := listener.Accept()
+		fmt.Println("Accepting connection...")
 		//log.Print("conn: ", conn, "com:", s.getCommand(conn))
 		if err != nil {
 			log.Printf("Error accepting connection: %v\n", err)
@@ -108,7 +111,7 @@ func (s *Server) Run() {
 // Получить запрос
 func (s *Server) getRequest(conn net.Conn) (Protocol.Request, error) {
 	// Устанавливаем тайм-аут на чтение данных (например, 10 секунд)
-	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(timeCheckConnect))
 	var req Protocol.Request
 	// Чтение данных с вервера
 	decoder := json.NewDecoder(conn)
