@@ -45,7 +45,7 @@ func (c *Client) ChooseStrategy() {
 	// Выбираем стратегию
 	var choose int
 	for {
-		fmt.Println("Выберите: \n 1. Сетевая игра \n Одиночная игра")
+		fmt.Println("Выберите: \n 1. Сетевая игра \n 2. Одиночная игра")
 		fmt.Scanln(&choose)
 		switch choose {
 		case 1:

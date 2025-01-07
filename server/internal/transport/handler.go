@@ -115,49 +115,12 @@ func (h *Handler) GameUser(conn net.Conn, req Protocol.Request) {
 		//h.sendResponse(conn, h.service.Game.CreateRoom([]models.Player{user, players}).(Protocol.Response))
 	}
 
-	//// Канал для отмены дедлайна
-	//removeUser := make(chan struct{})
-	//// Добавляем пользователя в очередь и запускаем таймер для удаления, если его не взяли
-	//go func() {
-	//	select {
-	//	// Если прошло время ожидания в очереди
-	//	case <-time.After(timeFindUser):
-	//		fmt.Println("User removed from queue due to timeout:", user.Name)
-	//		<-h.ch // Убираем его из канала, если за 3 минуты его никто не взял
-	//	case <-removeUser:
-	//		// Если пользователь был взят из канала до истечения времени
-	//		fmt.Println("User was taken from queue:", user.Name)
-	//	}
-	//}()
-	//for{
-	//	select {
-	//	// либо ждём записи в канал (то есть ставим текущего чела в очередь) (и подождём пока его возьмут)
-	//	case h.ch <- user:
-	//		fmt.Println("User placed in queue:", user.Name)
-	//	// Либо ждём пока появится чел в очереди
-	//	case user2 := <-h.ch:
-	//		if user.Name == user2.Name {
-	//			// Если это тот же пользователь, продолжаем ожидание
-	//			fmt.Println("User tried to take themselves from queue, waiting for another:", user.Name)
-	//			continue
-	//		}
-	//		// Если это другой пользователь => создаём комнату
-	//		h.sendResponse(conn, h.service.Game.CreateRoom([]models.Player{user, user2}).(Protocol.Response))
-	//		break
-	//	// Либо таймаут ожидания
-	//	case <-time.After(timeFindUser):
-	//		// Сообщаем, что пользователь не был взят
-	//		removeUser <- struct{}{}
-	//		h.sendResponse(conn, Protocol.Response{Cod: Protocol.StatusTimeOutCode, Message: Protocol.StatusTimeOut})
-	//		break
-	//	}
-	//}
-
 }
 func (h *Handler) findUser(user models.Player, quit chan struct{}) chan models.Player {
 	result := make(chan models.Player)
 	go func() {
 		for {
+			h.mu.Lock()
 			for player, _ := range h.queue {
 				select {
 				case <-quit:
@@ -167,18 +130,17 @@ func (h *Handler) findUser(user models.Player, quit chan struct{}) chan models.P
 				default:
 					// Если нашли готового игрока
 					if user != player {
-						h.mu.Lock()
 						// Делаем оповещение для другого пользователя
 						h.queue[player] <- struct{}{}
 						// Удаляем игроков из очереди
 						delete(h.queue, user)
 						delete(h.queue, player)
-						h.mu.Unlock()
 						result <- player
 						return
 					}
 				}
 			}
+			h.mu.Unlock()
 		}
 	}()
 	return result
@@ -189,6 +151,7 @@ func (h *Handler) GameServer(conn net.Conn, req Protocol.Request) {
 	if err != nil {
 		h.sendResponse(conn, err.(Protocol.Response))
 	}
+	log.Println("metka")
 	h.sendResponse(conn, h.service.Game.CreateRoom([]models.Player{user}).(Protocol.Response))
 }
 func (h *Handler) MakeMove(conn net.Conn, req Protocol.Request) {
@@ -208,3 +171,41 @@ func (h *Handler) GetTop(conn net.Conn, req Protocol.Request) {
 func (h *Handler) Exit(conn net.Conn, req Protocol.Request) {
 	h.sendResponse(conn, h.service.Players.Exit(conn, req).(Protocol.Response))
 }
+
+//// Канал для отмены дедлайна
+//removeUser := make(chan struct{})
+//// Добавляем пользователя в очередь и запускаем таймер для удаления, если его не взяли
+//go func() {
+//	select {
+//	// Если прошло время ожидания в очереди
+//	case <-time.After(timeFindUser):
+//		fmt.Println("User removed from queue due to timeout:", user.Name)
+//		<-h.ch // Убираем его из канала, если за 3 минуты его никто не взял
+//	case <-removeUser:
+//		// Если пользователь был взят из канала до истечения времени
+//		fmt.Println("User was taken from queue:", user.Name)
+//	}
+//}()
+//for{
+//	select {
+//	// либо ждём записи в канал (то есть ставим текущего чела в очередь) (и подождём пока его возьмут)
+//	case h.ch <- user:
+//		fmt.Println("User placed in queue:", user.Name)
+//	// Либо ждём пока появится чел в очереди
+//	case user2 := <-h.ch:
+//		if user.Name == user2.Name {
+//			// Если это тот же пользователь, продолжаем ожидание
+//			fmt.Println("User tried to take themselves from queue, waiting for another:", user.Name)
+//			continue
+//		}
+//		// Если это другой пользователь => создаём комнату
+//		h.sendResponse(conn, h.service.Game.CreateRoom([]models.Player{user, user2}).(Protocol.Response))
+//		break
+//	// Либо таймаут ожидания
+//	case <-time.After(timeFindUser):
+//		// Сообщаем, что пользователь не был взят
+//		removeUser <- struct{}{}
+//		h.sendResponse(conn, Protocol.Response{Cod: Protocol.StatusTimeOutCode, Message: Protocol.StatusTimeOut})
+//		break
+//	}
+//}

@@ -28,8 +28,9 @@ func main() {
 	// Создание клиента который работает с протоколом Kat
 	client := models.NewClientKat(conn)
 	client.ChooseUsername()
+	client.ChooseStrategy()
 	//fmt.Println("client:", client)
-	client.GetTopScores()
+	//client.GetTopScores()
 	//// Создание консольного обработчика
 	//handle := controller.NewHandler(client)
 	//ch := make(chan struct{})
