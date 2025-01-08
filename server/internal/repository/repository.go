@@ -14,6 +14,7 @@ type Players interface {
 }
 type Game interface {
 	CreateRoom(players []models.Player) error
+	//GetModeInit(user models.Player)(int,error)
 }
 type Repository struct {
 	Players
