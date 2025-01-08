@@ -163,6 +163,7 @@ func (h *Handler) TakeChips(conn net.Conn, req Protocol.Request) {
 func (h *Handler) MoveChips(conn net.Conn, req Protocol.Request) {
 
 }
+
 func (h *Handler) GetTop(conn net.Conn, req Protocol.Request) {
 	//h.sendResponse(conn, h.service.Players.CreatePlayer(req.Username, conn).(Protocol.Response))
 	h.sendResponse(conn, h.service.Players.GetTop(conn, req).(Protocol.Response))

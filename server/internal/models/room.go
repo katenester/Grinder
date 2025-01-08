@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Room struct {
+	Id           int
 	Players      []Player  // Хранение игроков
 	LastActivity time.Time // Последняя активность
 	StatusGame   Status

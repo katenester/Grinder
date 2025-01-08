@@ -14,6 +14,9 @@ type Players interface {
 }
 type Game interface {
 	CreateRoom(players []models.Player) error
+	GetRoomId(players []models.Player) (int, error)
+	GetBoard(idRoom int) [16]int
+	SetBoard(idRoom int, newBoard [16]int)
 	//GetModeInit(user models.Player)(int,error)
 }
 type Repository struct {

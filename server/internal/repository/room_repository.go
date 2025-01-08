@@ -28,6 +28,7 @@ func (rooms *RoomsMemory) CreateRoom(players []models.Player) error {
 	rooms.Mutex.Lock()
 	defer rooms.Mutex.Unlock()
 	rooms.Rooms = append(rooms.Rooms, models.Room{
+		Id:         len(rooms.Rooms), // id комнаты (для первой комнаты -0 и т/д)
 		Players:    players,
 		StatusGame: models.Create,    // статус- игра создана
 		IsNetwork:  len(players) > 1, // если игроков больше 1 (иначе игра с сервером)
@@ -35,6 +36,39 @@ func (rooms *RoomsMemory) CreateRoom(players []models.Player) error {
 		MillsBuilt: make(map[int][][]int),
 	})
 	return Protocol.Response{Cod: Protocol.StatusCreatedSuccessCode, Message: Protocol.RelateError(Protocol.StatusCreatedSuccessCode)}
+}
+
+func (rooms *RoomsMemory) GetRoomId(players []models.Player) (int, error) {
+	// итерация по комнатам
+	for _, room := range rooms.Rooms {
+		// Если количество игроков не совпадает, это уже не та комната
+		if len(players) != len(room.Players) {
+			continue
+		}
+		// если один игрок
+		if len(players) == 1 {
+			if players[0] == room.Players[0] {
+				return room.Id, nil
+			}
+		}
+		// Если сопадают 2 игрока
+		if (players[0] == room.Players[0] || players[0] == room.Players[1]) && (players[1] == room.Players[0] || players[1] == room.Players[1]) {
+			return room.Id, nil
+		}
+	}
+	return 0, Protocol.Response{Cod: Protocol.StatusNotFoundCode, Message: Protocol.RelateError(Protocol.StatusNotFoundCode)}
+}
+
+// GetBoard - получить доску
+func (rooms *RoomsMemory) GetBoard(idRoom int) [16]int {
+	return rooms.Rooms[idRoom].Board
+}
+
+// SetBoard - установить новую доску
+func (rooms *RoomsMemory) SetBoard(idRoom int, newBoard [16]int) {
+	rooms.Mutex.Lock()
+	rooms.Rooms[idRoom].Board = newBoard
+	rooms.Mutex.Unlock()
 }
 
 // GetModeInit - получение режима игры (сетевая или нет)
