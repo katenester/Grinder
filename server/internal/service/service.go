@@ -15,7 +15,7 @@ type Players interface {
 }
 
 type Game interface {
-	CreateRoom(players []models.Player) error
+	CreateRoom(players []models.Player) (int, error)
 }
 type Service struct {
 	Players

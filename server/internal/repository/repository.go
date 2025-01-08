@@ -13,10 +13,13 @@ type Players interface {
 	GetUser(username string) (models.Player, error)
 }
 type Game interface {
-	CreateRoom(players []models.Player) error
-	GetRoomId(players []models.Player) (int, error)
+	CreateRoom(players []models.Player) (int, error)
+	// GetRoomId(players []models.Player) (int, error)
 	GetBoard(idRoom int) [16]int
 	SetBoard(idRoom int, newBoard [16]int)
+	GetMillsBuilt(idRoom int, currentPlayer int) [][]int
+	AppendMillsBuilt(idRoom int, currentPlayer int, mill []int)
+	GetPlayer(idRoom int) []models.Player
 	//GetModeInit(user models.Player)(int,error)
 }
 type Repository struct {

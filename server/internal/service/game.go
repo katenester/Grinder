@@ -3,8 +3,10 @@ package service
 import (
 	"Grinder/server/internal/models"
 	"Grinder/server/internal/repository"
+	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -19,7 +21,7 @@ func NewGameService(repo repository.Game) *GameService {
 	}
 }
 
-func (g *GameService) CreateRoom(players []models.Player) error {
+func (g *GameService) CreateRoom(players []models.Player) (int, error) {
 	return g.repo.CreateRoom(players)
 }
 
@@ -43,73 +45,84 @@ var neighbors = map[int][]int{
 }
 
 // GameServer - логика игры c сервером
-func (g *GameService) GameServer(player models.Player) error {
+func (g *GameService) GameServer(idRoom int) error {
 	count1 := 6
 	count2 := 6
-	currentPlayer := 1 // 1-текущий (первый) игрок , 2 - второй/ сервер
-	idRoom, err := g.repo.GetRoomId([]models.Player{player})
-	if err != nil {
-		// Комната не найдена
-		return err
-	}
+	//currentPlayer := 1 // 1-текущий (первый) игрок , 2 - второй/ сервер
+	players := g.repo.GetPlayer(idRoom)
 	// Игроки расставляют по 6 фишек на поле - 1-ый этап
 	for turns := 0; turns < 12; turns++ {
 		// Вывод поля для игрока (отправка игроку)
-		err := player.SendPlayer(printBoard(g.repo.GetBoard(idRoom)))
+		err := sendPlayer(printBoard(g.repo.GetBoard(idRoom)), players[turns%2])
 		if err != nil {
 			log.Print("GameSever error")
 			return err
 		}
 		// Ставим фишку
-		if currentPlayer == 1 {
-			placePieces(&board, currentPlayer)
+		// Если пользователь
+		if turns%2 == 0 {
+			g.placePieces(idRoom, turns%2, players)
 		} else {
 			// Логика для компьютера
-			computerPlacePiece(&board, currentPlayer)
+			g.computerPlacePiece(idRoom, turns%2, players)
 		}
 
 		// Проверка на наличие мельницы после хода
-		mills := checkAndGetMills(board, currentPlayer) // Получаем построенную мельницу
-		if len(mills) > 0 {                             // Проверяем, есть ли найденные мельницы
+		mills := checkAndGetMills(g.repo.GetBoard(idRoom), turns%2) // Получаем построенную мельницу
+		if len(mills) > 0 {                                         // Проверяем, есть ли найденные мельницы
 			for _, mill := range mills {
 				// Проверяем, была ли уже построена эта мельница
-				if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
-					millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill) // Добавляем построенную мельницу в список
-					fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
+				if !isMillAlreadyBuilt(g.repo.GetMillsBuilt(idRoom, turns%2), mill) {
+					g.repo.AppendMillsBuilt(idRoom, turns%2, mill) // Добавляем построенную мельницу в список
+					//err = sendPlayer("Игрок "+player.Name+", выберите позицию для размещения фишки (0-15): ", players[player-1])
+					//if err != nil {
+					//	log.Println(err)
+					//}
+					err = sendPlayer(fmt.Sprintf("Игрок %s построил новую мельницу! Текущие мельницы: %v\n", players[turns%2].Name, g.repo.GetMillsBuilt(idRoom, turns%2)), players[0])
+					if err != nil {
+						log.Println(err)
+					}
 					// Удаляем фишку противника
-					if currentPlayer == 1 {
-						removeOpponentPiece(&board, currentPlayer)
+					if turns%2 == 0 {
+						g.removeOpponentPiece(idRoom, turns%2, players)
 						count2--
 					} else {
-						removeOpponentPieceComputer(&board, currentPlayer)
+						g.removeOpponentPieceComputer(idRoom, turns%2, players)
 						count1--
 					}
 				} else {
-					fmt.Printf("Игрок %d построил мельницу, но она уже была построена ранее.\n", currentPlayer)
+					err = sendPlayer(fmt.Sprintf("Игрок %s построил мельницу, но она уже была построена ранее.\n", players[turns%2].Name), players[0])
+					if err != nil {
+						log.Println(err)
+					}
 				}
 			}
 		}
-		// Смена игрока и повтор
-		currentPlayer = 3 - currentPlayer
+		//// Смена игрока и повтор
+		//currentPlayer = 3 - currentPlayer
 	}
-
+	currentPlayer := 0
 	// Второй этап
 	for {
-		printBoard(board)
-		if currentPlayer == 1 {
+		// Вывод поля для игрока (отправка игроку)
+		err := sendPlayer(printBoard(g.repo.GetBoard(idRoom)), players[0])
+		if err != nil {
+			log.Print("GameSever error")
+			return err
+		}
+		if currentPlayer == 0 {
 			// Ход игрока
-			fmt.Printf("Игрок %d, выберите перемещение\n", currentPlayer)
-
+			sendPlayer(fmt.Sprintf("Игрок %d, выберите перемещение\n", currentPlayer), players[0])
 			var from, to int
 
 			// Проверка ввода для перемещения "from"
 			for {
-				fmt.Print("С какой позиции хотите переместить фишку? ")
+				sendPlayer("С какой позиции хотите переместить фишку? ", players[0])
 				var position string
 				fmt.Scan(&position)
 				positionInt, err := strconv.Atoi(position)
-				if err != nil || positionInt < 0 || positionInt >= len(board) {
-					fmt.Println("Некорректный ввод, попробуйте снова.")
+				if err != nil || positionInt < 0 || positionInt >= len(g.repo.GetBoard(idRoom)) {
+					sendPlayer("Некорректный ввод, попробуйте снова. ", players[0])
 					continue
 				}
 				from = positionInt
@@ -118,12 +131,16 @@ func (g *GameService) GameServer(player models.Player) error {
 
 			// Проверка ввода для перемещения "to"
 			for {
-				fmt.Print("На какую позицию хотите переместить фишку? ")
+				sendPlayer("На какую позицию хотите переместить фишку?  ", players[0])
 				var position string
-				fmt.Scan(&position)
+				// Получаем позицию от игрока
+				position, err = receivePlayer(players[0])
+				if err != nil {
+					log.Println("placePieces error 2")
+				}
 				positionInt, err := strconv.Atoi(position)
-				if err != nil || positionInt < 0 || positionInt >= len(board) {
-					fmt.Println("Некорректный ввод, попробуйте снова.")
+				if err != nil || positionInt < 0 || positionInt >= len(g.repo.GetBoard(idRoom)) {
+					sendPlayer("Некорректный ввод, попробуйте снова. ", players[0])
 					continue
 				}
 				to = positionInt
@@ -131,63 +148,69 @@ func (g *GameService) GameServer(player models.Player) error {
 			}
 
 			// Проверяем допустимость перемещения
-			if isValidMove(board, neighbors, currentPlayer, from, to, count1) {
+			if isValidMove(g.repo.GetBoard(idRoom), neighbors, currentPlayer, from, to, count1) {
+				board := g.repo.GetBoard(idRoom)
 				board[to] = board[from] // Перемещаем фишку
 				board[from] = 0         // Освобождаем исходное место
-				mills := checkAndGetMills(board, currentPlayer)
+				g.repo.SetBoard(idRoom, board)
+				mills := checkAndGetMills(g.repo.GetBoard(idRoom), currentPlayer)
 				if len(mills) > 0 {
 					for _, mill := range mills {
-						if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
-							millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
-							fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
-							removeOpponentPiece(&board, currentPlayer)
+						if !isMillAlreadyBuilt(g.repo.GetMillsBuilt(idRoom, currentPlayer), mill) {
+							g.repo.AppendMillsBuilt(idRoom, currentPlayer, mill)
+							sendPlayer(fmt.Sprintf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, g.repo.GetMillsBuilt(idRoom, currentPlayer)), players[0])
+							g.removeOpponentPiece(idRoom, currentPlayer, players)
 							count2--
 						}
 					}
 				}
-				if count1 == 2 || isLocked(board, neighbors, 1) {
-					fmt.Println("Игрок 2 победил!")
+				if count1 == 2 || isLocked(g.repo.GetBoard(idRoom), neighbors, 1) {
+					sendPlayer(fmt.Sprintf("Игрок %s победил!", players[1].Name), players[0])
 					break
 				}
-				if count2 == 2 || isLocked(board, neighbors, 2) {
-					fmt.Println("Игрок 1 победил!")
+				if count2 == 2 || isLocked(g.repo.GetBoard(idRoom), neighbors, 2) {
+					sendPlayer(fmt.Sprintf("Игрок %s победил!", players[0].Name), players[0])
 					break
 				}
 			} else {
 				fmt.Println("Неверный ход, попробуйте снова")
+				sendPlayer("Неверный ход, попробуйте снова", players[0])
 			}
 		} else {
 			// Ход компьютера
-			fmt.Printf("Игрок %d (Компьютер) делает ход...\n", currentPlayer)
-
+			sendPlayer(fmt.Sprintf("Игрок %s (Компьютер) делает ход...", players[1].Name), players[0])
 			// Логика выбора хода компьютера
-			from, to := computerMove(&board, neighbors, currentPlayer, count2)
-			board[to] = board[from]
-			board[from] = 0
-			fmt.Printf("Компьютер переместил фишку с %d на %d\n", from, to)
+			from, to := g.computerMove(g.repo.GetBoard(idRoom), neighbors, currentPlayer, count2)
+			board := g.repo.GetBoard(idRoom)
+			board[to] = board[from] // Перемещаем фишку
+			board[from] = 0         // Освобождаем исходное место
+			// Устанавливаем в репозитории
+			g.repo.SetBoard(idRoom, board)
+			sendPlayer(fmt.Sprintf("Компьютер переместил фишку с %d на %d\n", from, to), players[0])
 			mills := checkAndGetMills(board, currentPlayer)
 			if len(mills) > 0 {
 				for _, mill := range mills {
-					if !isMillAlreadyBuilt(millsBuilt[currentPlayer], mill) {
-						millsBuilt[currentPlayer] = append(millsBuilt[currentPlayer], mill)
-						fmt.Printf("Игрок %d построил новую мельницу! Текущие мельницы: %v\n", currentPlayer, millsBuilt[currentPlayer])
-						removeOpponentPieceComputer(&board, currentPlayer)
+					if !isMillAlreadyBuilt(g.repo.GetMillsBuilt(idRoom, currentPlayer), mill) {
+						g.repo.AppendMillsBuilt(idRoom, currentPlayer, mill)
+						sendPlayer(fmt.Sprintf("Игрок %s построил новую мельницу! Текущие мельницы: %v\n", players[1].Name, g.repo.GetMillsBuilt(idRoom, currentPlayer)), players[0])
+						g.removeOpponentPieceComputer(idRoom, currentPlayer, players)
 						count1--
 					}
 				}
 			}
-			if count1 == 2 || isLocked(board, neighbors, 1) {
-				fmt.Println("Игрок 2 победил!")
+			if count1 == 2 || isLocked(g.repo.GetBoard(idRoom), neighbors, 1) {
+				sendPlayer(fmt.Sprintf("Игрок %s победил!", players[1].Name), players[0])
 				break
 			}
-			if count2 == 2 || isLocked(board, neighbors, 2) {
-				fmt.Println("Игрок 1 победил!")
+			if count2 == 2 || isLocked(g.repo.GetBoard(idRoom), neighbors, 2) {
+				sendPlayer(fmt.Sprintf("Игрок %s победил!", players[0].Name), players[0])
 				break
 			}
 		}
 		// Смена игрока
-		currentPlayer = 3 - currentPlayer
+		currentPlayer = (currentPlayer + 1) % 2
 	}
+	return nil
 }
 
 // // Game - логика игры
@@ -428,21 +451,39 @@ func printBoard(board [16]int) string {
 }
 
 // Функция для расстановки фишек
-func placePieces(board *[16]int, player int) {
+func (g *GameService) placePieces(idRoom int, player int, players []models.Player) {
+	board := g.repo.GetBoard(idRoom)
 	var position string
 	for {
-		fmt.Printf("Игрок %d, выберите позицию для размещения фишки (0-15): ", player)
-		fmt.Scan(&position)
+		// Отправляем message игрокам
+		err := sendPlayer("Игрок "+players[player].Name+", выберите позицию для размещения фишки (0-15): ", players[player])
+		if err != nil {
+			log.Println("placePieces error")
+		}
+		// Получаем позицию от игрока
+		position, err = receivePlayer(players[player])
+		if err != nil {
+			log.Println("placePieces error 2")
+		}
 		positionInt, err := strconv.Atoi(position)
 		if err != nil {
-			fmt.Println("Некорректный ввод, попробуйте снова.")
+			err = sendPlayer("Некорректный ввод, попробуйте снова.", players[player])
+			if err != nil {
+				log.Println("placePieces error 3")
+			}
 		} else {
-			fmt.Println(position)
+			//fmt.Println(position)
 			if positionInt >= 0 && positionInt < 16 && board[positionInt] == 0 { // Проверяем, свободно ли место
+				// Меняем доску локально
 				board[positionInt] = player
+				// Меняем глобально (на уравне ссылок и репозитория)
+				g.repo.SetBoard(idRoom, board)
 				break
 			}
-			fmt.Println("Некорректный ввод, попробуйте снова.")
+			err = sendPlayer("Некорректный ввод, попробуйте снова.", players[player])
+			if err != nil {
+				log.Println("placePieces error 4")
+			}
 		}
 	}
 }
@@ -464,21 +505,39 @@ func checkAndGetMills(board [16]int, player int) [][]int {
 	return foundMills // Возвращаем все найденные мельницы
 }
 
-func removeOpponentPiece(board *[16]int, player int) {
-	opponent := 3 - player
+func (g *GameService) removeOpponentPiece(idRoom int, player int, players []models.Player) {
+	opponent := (player + 1) % 2
+	board := g.repo.GetBoard(idRoom)
 	var position string
 	for {
-		fmt.Printf("Игрок %d, выберите позицию для удаления фишки противника: ", player)
-		fmt.Scan(&position)
+		err := sendPlayer(fmt.Sprintf("Игрок %s, выберите позицию для удаления фишки противника: ", players[player].Name), players[player])
+		if err != nil {
+			log.Println("removeOpponentPiece error")
+		}
+
+		// Получаем позицию от игрока
+		position, err = receivePlayer(players[player])
+		if err != nil {
+			log.Println("removeOpponentPiece error 2")
+		}
 		positionInt, err := strconv.Atoi(position)
 		if err != nil {
-			fmt.Println("Некорректный ввод, попробуйте снова.")
+			err = sendPlayer("Некорректный ввод, попробуйте снова.", players[player])
+			if err != nil {
+				log.Println("removeOpponentPiece error 3")
+			}
 		} else {
 			if positionInt >= 0 && positionInt < 16 && board[positionInt] == opponent {
-				board[positionInt] = 0 // Удаляем фишку противника
+				// Меняем доску локально
+				board[positionInt] = 0
+				// Меняем глобально (на уравне ссылок и репозитория)
+				g.repo.SetBoard(idRoom, board)
 				break
 			}
-			fmt.Println("Некорректный ввод или позиция не занята противником, попробуйте снова.")
+			err = sendPlayer("Некорректный ввод, попробуйте снова.", players[player])
+			if err != nil {
+				log.Println("removeOpponentPiece error 4")
+			}
 		}
 	}
 }
@@ -530,10 +589,10 @@ func isLocked(board [16]int, neighbors map[int][]int, currentPlayer int) bool {
 	return true // Если ни одна фишка не может сделать ход
 }
 
-func computerPlacePiece(board *[16]int, currentPlayer int) {
+func (g *GameService) computerPlacePiece(idRoom int, currentPlayer int, players []models.Player) {
 	//rand.Seed(time.Now().UnixNano()) // Инициализация генератора случайных чисел
 	freePositions := []int{} // Массив для хранения свободных позиций
-
+	board := g.repo.GetBoard(idRoom)
 	// Находим все свободные позиции
 	for i := 0; i < len(board); i++ {
 		if board[i] == 0 { // Если клетка свободна (0)
@@ -547,18 +606,27 @@ func computerPlacePiece(board *[16]int, currentPlayer int) {
 		selectedPosition := freePositions[randomIndex]
 
 		// Ставим фишку компьютера на выбранную позицию
+		sendPlayer(fmt.Sprintf("Компьютер поставил фишку на позицию %d\n", selectedPosition), players[0])
+
+		// Меняем доску локально
 		board[selectedPosition] = currentPlayer
-		fmt.Printf("Компьютер поставил фишку на позицию %d\n", selectedPosition)
-	} else {
-		// Можно будет убрать
-		fmt.Println("Нет доступных мест для размещения фишки компьютера.")
+		// Меняем глобально (на уравне ссылок и репозитория)
+		g.repo.SetBoard(idRoom, board)
+		//err := sendPlayer("Некорректный ввод, попробуйте снова.", player)
 	}
+	//else {
+	//	//// Можно будет убрать
+	//	//err := sendPlayer("Некорректный ввод, попробуйте снова.", player)
+	//	//if err != nil {
+	//	//	log.Println("error computerPlacePiece")
+	//	//}
+	//}
 }
 
-func removeOpponentPieceComputer(board *[16]int, player int) {
-	opponent := 3 - player
+func (g *GameService) removeOpponentPieceComputer(idRoom int, player int, players []models.Player) {
+	opponent := (player + 1) % 2
 	opponentPositions := []int{} // Массив для хранения позиций фишек противника
-
+	board := g.repo.GetBoard(idRoom)
 	// Находим все позиции фишек противника
 	for i := 0; i < len(board); i++ {
 		if board[i] == opponent {
@@ -570,16 +638,19 @@ func removeOpponentPieceComputer(board *[16]int, player int) {
 		// Выбираем случайную позицию для удаления
 		randomIndex := rand.Intn(len(opponentPositions))
 		selectedPosition := opponentPositions[randomIndex]
-
-		// Удаляем фишку противника
+		// Ставим фишку компьютера на выбранную позицию
+		sendPlayer(fmt.Sprintf("Компьютер удалил фишку противника с позиции %d\n", selectedPosition), players[0])
+		// Меняем доску локально
 		board[selectedPosition] = 0
-		fmt.Printf("Компьютер удалил фишку противника с позиции %d\n", selectedPosition)
-	} else {
-		// Можно убрать
-		fmt.Println("Нет фишек противника для удаления.")
+		// Меняем глобально (на уравне ссылок и репозитория)
+		g.repo.SetBoard(idRoom, board)
 	}
+	//else {
+	//	// Можно убрать
+	//	fmt.Println("Нет фишек противника для удаления.")
+	//}
 }
-func computerMove(board *[16]int, neighbors map[int][]int, currentPlayer int, count int) (int, int) {
+func (g *GameService) computerMove(board [16]int, neighbors map[int][]int, currentPlayer int, count int) (int, int) {
 	availableMoves := []string{}
 
 	// Находим все доступные перемещения для компьютера
@@ -588,14 +659,14 @@ func computerMove(board *[16]int, neighbors map[int][]int, currentPlayer int, co
 			if count > 3 {
 				// Можно перемещаться только на соседние свободные клетки
 				for _, to := range neighbors[from] {
-					if isValidMove(*board, neighbors, currentPlayer, from, to, count) {
+					if isValidMove(board, neighbors, currentPlayer, from, to, count) {
 						availableMoves = append(availableMoves, fmt.Sprintf("%d->%d", from, to))
 					}
 				}
 			} else {
 				// Можно перемещаться на любую свободную клетку
 				for to := 0; to < len(board); to++ {
-					if isValidMove(*board, neighbors, currentPlayer, from, to, count) {
+					if isValidMove(board, neighbors, currentPlayer, from, to, count) {
 						availableMoves = append(availableMoves, fmt.Sprintf("%d->%d", from, to))
 					}
 				}
@@ -618,4 +689,28 @@ func parseMove(move string) (int, int) {
 	var from, to int
 	fmt.Sscanf(move, "%d->%d", &from, &to)
 	return from, to
+}
+
+func sendPlayer(message string, player models.Player) error {
+	// Если сервер => ничего не отправляем
+	if player.Conn == nil {
+		return nil
+	}
+	dat, err := json.Marshal(message)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	_, err = player.Conn.Write(dat)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func receivePlayer(player models.Player) (string, error) {
+	dat := make([]byte, 1024)
+	n, err := player.Conn.Read(dat)
+	return string(dat[:n]), err
 }
